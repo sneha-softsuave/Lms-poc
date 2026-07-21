@@ -1,0 +1,146 @@
+# ==========================
+# Python / FastAPI
+# ==========================
+
+# Byte-compiled / optimized
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# Test / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.mypy_cache/
+.pyre/
+.ruff_cache/
+.hypothesis/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDEs
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# SQLite
+*.sqlite3
+*.db
+
+# ==========================
+# FastAPI
+# ==========================
+
+# Uvicorn
+uvicorn.log
+
+# Static/media (optional)
+media/
+uploads/
+
+# ==========================
+# React / Node
+# ==========================
+
+node_modules/
+
+# Build output
+build/
+dist/
+
+# Cache
+.cache/
+.parcel-cache/
+.eslintcache
+.npm/
+.pnpm-store/
+.yarn/
+.yarn/cache/
+.yarn/unplugged/
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# Vite
+vite.svg
+
+# Next.js
+.next/
+out/
+
+# Nuxt
+.nuxt/
+
+# SvelteKit
+.svelte-kit/
+
+# React Native
+.expo/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# TypeScript
+*.tsbuildinfo
+
+# ==========================
+# Misc
+# ==========================
+
+coverage/
+*.pid
+*.seed
+*.out
+*.err
+
+# Secrets
+*.pem
+*.key
+*.crt
+*.p12
+
+# Local config
+*.local
