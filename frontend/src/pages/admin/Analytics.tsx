@@ -4,6 +4,8 @@ import { Layout } from "../../components/Layout";
 import { api } from "../../api/client";
 import { useToast } from "../../components/Toast";
 import { Progress, Empty, Spinner } from "../../components/ui";
+import { Icon } from "../../components/icons";
+import { IconTile } from "../../components/icons";
 
 function MiniBar({ value, color = "var(--accent)", label, sub }: { value: number; color?: string; label: string; sub?: string }) {
   return (
@@ -81,18 +83,21 @@ export default function Analytics() {
 
       <div className="card mb">
         <div className="card-head">
-          <h3 style={{ margin: 0 }}>Cohort progress by course</h3>
+          <div className="row">
+            <IconTile name="analytics" size="sm" tone="blue" />
+            <h3 style={{ margin: 0 }}>Cohort progress by course</h3>
+          </div>
           <button className={`btn btn-sm ${exported ? "btn-success" : "btn-ghost"}`} onClick={exportCsv}>
             <AnimatePresence mode="wait">
               {exported ? (
-                <motion.span key="ok" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}>✓ Exported</motion.span>
+                <motion.span key="ok" className="row" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}><Icon name="check" /> Exported</motion.span>
               ) : (
                 <motion.span key="export" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}>⭳ Export results (CSV)</motion.span>
               )}
             </AnimatePresence>
           </button>
         </div>
-        {cohort.length === 0 ? <Empty icon="📊" title="No data yet" hint="Publish a course and have learners enrol." /> : (
+        {cohort.length === 0 ? <Empty icon={<IconTile name="analytics" size="lg" tone="slate" />} title="No data yet" hint="Publish a course and have learners enrol." /> : (
           <table>
             <thead><tr><th>Course</th><th>Subject</th><th>Enrolled</th><th style={{ width: 220 }}>Avg progress</th><th>Completed</th></tr></thead>
             <tbody>
@@ -113,9 +118,9 @@ export default function Analytics() {
       <div className="grid grid-2" style={{ alignItems: "start" }}>
         <div className="card">
           <div className="card-head"><h3 style={{ margin: 0 }}>Subject mastery</h3><span className="muted small mono">avg quiz score</span></div>
-          {mastery.length === 0 ? <Empty icon="🎯" title="No quiz attempts yet" /> : (
+          {mastery.length === 0 ? <Empty icon={<IconTile name="award" size="lg" tone="slate" />} title="No quiz attempts yet" /> : (
             <div className="card-pad">
-              {mastery.map((m, i) => (
+              {mastery.map((m) => (
                 <MiniBar
                   key={m.subject_title}
                   label={m.subject_title}
@@ -130,7 +135,7 @@ export default function Analytics() {
 
         <div className="card">
           <div className="card-head"><h3 style={{ margin: 0 }}>Weakest topics</h3><span className="muted small mono">lowest-scoring modules</span></div>
-          {weakest.length === 0 ? <Empty icon="📉" title="No quiz attempts yet" /> : (
+          {weakest.length === 0 ? <Empty icon={<IconTile name="chart" size="lg" tone="slate" />} title="No quiz attempts yet" /> : (
             <table>
               <thead><tr><th>Module</th><th>Course</th><th>Avg score</th></tr></thead>
               <tbody>

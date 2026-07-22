@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Layout } from "../../components/Layout";
 import { api, Certificate } from "../../api/client";
 import { Empty, Spinner, ProgressRing } from "../../components/ui";
+import { IconTile } from "../../components/icons";
 
 export default function Certificates() {
   const [certs, setCerts] = useState<Certificate[]>([]);
@@ -16,7 +17,7 @@ export default function Certificates() {
   return (
     <Layout title="Certificates">
       {certs.length === 0 ? (
-        <div className="card"><Empty icon="🏅" title="No certificates yet"
+        <div className="card"><Empty icon={<IconTile name="certificates" size="lg" tone="slate" />} title="No certificates yet"
           hint="Complete a course to earn a completion certificate." /></div>
       ) : (
         <div className="grid grid-2">
@@ -56,16 +57,19 @@ function CertModal({ cert, onClose }: { cert: Certificate; onClose: () => void }
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       onClick={onClose}
-      style={{ position: "fixed", inset: 0, background: "rgba(10,14,20,0.85)", display: "grid", placeItems: "center", zIndex: 40 }}
+      style={{ position: "fixed", inset: 0, background: "rgba(2,6,23,0.78)", backdropFilter: "blur(4px)", display: "grid", placeItems: "center", zIndex: 40 }}
     >
       <motion.div
         initial={{ scale: 0.96, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.96, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
-        style={{ width: 620, maxWidth: "92vw", background: "var(--bg-panel)", borderRadius: 12, padding: 8, border: "1px solid var(--border)" }}
+        style={{ width: 620, maxWidth: "92vw", background: "var(--bg-panel)", borderRadius: 16, padding: 10, border: "1px solid var(--border)", boxShadow: "var(--shadow-lg)" }}
       >
-        <div style={{ border: "3px double var(--accent)", borderRadius: 8, padding: "36px 40px", textAlign: "center" }}>
+        <div style={{ border: "3px double var(--accent)", borderRadius: 12, padding: "36px 40px", textAlign: "center" }}>
+          <div className="row" style={{ justifyContent: "center", marginBottom: 12 }}>
+            <IconTile name="certificates" size="lg" tone="blue" />
+          </div>
           <div className="brand-sub" style={{ color: "var(--text-dim)" }}>Defense AI Training & Simulation Platform</div>
           <h2 style={{ marginTop: 18, color: "var(--text-main)" }}>Certificate of Completion</h2>
           <p className="muted" style={{ margin: "6px 0 18px" }}>This certifies that</p>

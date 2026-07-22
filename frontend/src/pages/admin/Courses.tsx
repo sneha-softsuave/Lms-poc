@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Layout } from "../../components/Layout";
 import { api, Course } from "../../api/client";
 import { StatusBadge, Empty, Spinner, SkeletonText } from "../../components/ui";
+import { IconTile } from "../../components/icons";
 
 function SkeletonRow({ cols = 4 }: { cols?: number }) {
   return (
@@ -78,21 +79,27 @@ export default function Courses() {
     <Layout title="Courses & Review">
       <div className="card mb">
         <div className="card-head">
-          <h3 style={{ margin: 0 }}>Draft courses awaiting review</h3>
+          <div className="row">
+            <IconTile name="course" size="sm" tone="amber" />
+            <h3 style={{ margin: 0 }}>Draft courses awaiting review</h3>
+          </div>
           <Link to="/admin/materials" className="btn btn-primary btn-sm">＋ Generate from material</Link>
         </div>
         {drafts.length === 0 ? (
-          <Empty icon="📝" title="No drafts" hint="Generate a course from an uploaded document." />
+          <Empty icon={<IconTile name="course" size="lg" tone="slate" />} title="No drafts" hint="Generate a course from an uploaded document." />
         ) : <Table rows={drafts} cta="Review" />}
       </div>
 
       <div className="card">
         <div className="card-head">
-          <h3 style={{ margin: 0 }}>Published & live courses</h3>
+          <div className="row">
+            <IconTile name="book" size="sm" tone="green" />
+            <h3 style={{ margin: 0 }}>Published & live courses</h3>
+          </div>
           <span className="muted small">edit lessons, add / change 3D models, unpublish</span>
         </div>
         {live.length === 0 ? (
-          <Empty icon="📚" title="No published courses yet" hint="Publish a draft to make it live." />
+          <Empty icon={<IconTile name="book" size="lg" tone="slate" />} title="No published courses yet" hint="Publish a draft to make it live." />
         ) : <Table rows={live} cta="Manage" />}
       </div>
       <p className="muted small mt">

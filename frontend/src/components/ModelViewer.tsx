@@ -1,25 +1,47 @@
-import { Component, ReactNode, Suspense, useEffect, useRef, useState } from "react";
-import { Canvas, useThree } from "@react-three/fiber";
+import { Component, ReactNode, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { OrbitControls, Html, useGLTF, Bounds } from "@react-three/drei";
 import * as THREE from "three";
 import { api, ViewerPayload, Hotspot, ChatResponse } from "../api/client";
 import { Citations, SlideOver, Spinner } from "./ui";
+import { IconTile } from "./icons";
 
 type Preset = "front" | "side" | "top" | "iso";
 const PRESET_POS: Record<Preset, [number, number, number]> = {
   front: [0, 0.4, 3.2], side: [3.2, 0.4, 0], top: [0, 3.4, 0.001], iso: [2.5, 1.8, 2.5],
 };
 
+// Draco is disabled deliberately: drei defaults its decoder to
+// https://www.gstatic.com/draco/... which would break the local-only asset
+// requirement (see app/main.py). Meshopt's decoder ships inside three-stdlib,
+// so the .glb files are compressed with meshopt instead.
 function Model({ url }: { url: string }) {
-  const gltf = useGLTF(url);
-  return <primitive object={gltf.scene} />;
+  const { scene } = useGLTF(url, false);
+
+  // Source models arrive at wildly different scales (a rifle is ~9 units, a
+  // carrier ~305). Normalise each model into a 2-unit box centred on the origin so
+  // camera presets, hotspot coordinates and marker sizes are model-independent.
+  // scripts/derive_hotspots.py applies this same transform when seeding.
+  const fit = useMemo(() => {
+    const box = new THREE.Box3().setFromObject(scene);
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    const s = 2 / Math.max(size.x, size.y, size.z);
+    return { scale: s, position: center.multiplyScalar(-s).toArray() as [number, number, number] };
+  }, [scene]);
+
+  return (
+    <group scale={fit.scale} position={fit.position}>
+      <primitive object={scene} />
+    </group>
+  );
 }
 
 function PlaceholderModel() {
   return (
     <group>
-      <mesh><boxGeometry args={[1.2, 0.8, 1.2]} /><meshStandardMaterial color="#33506D" metalness={0.3} roughness={0.5} /></mesh>
-      <mesh position={[0, 0.6, 0]}><cylinderGeometry args={[0.25, 0.25, 0.5, 24]} /><meshStandardMaterial color="#4A8BDF" /></mesh>
+      <mesh><boxGeometry args={[1.2, 0.8, 1.2]} /><meshStandardMaterial color="#94A3B8" metalness={0.3} roughness={0.5} /></mesh>
+      <mesh position={[0, 0.6, 0]}><cylinderGeometry args={[0.25, 0.25, 0.5, 24]} /><meshStandardMaterial color="#2563EB" /></mesh>
     </group>
   );
 }
@@ -32,30 +54,71 @@ class ModelBoundary extends Component<{ children: ReactNode }, { failed: boolean
 
 function CameraRig({ preset, focus }: { preset: Preset; focus: [number, number, number] | null }) {
   const { camera, controls } = useThree() as any;
+  const targetPos = useMemo(() => new THREE.Vector3(), []);
+  const targetLook = useMemo(() => new THREE.Vector3(), []);
+  const moving = useRef(false);
+
   useEffect(() => {
     if (!controls) return;
     if (focus) {
-      const [x, y, z] = focus;
-      controls.target.set(x, y, z);
-      camera.position.set(x + 1.4, y + 1.0, z + 1.4);
+      targetLook.set(...focus);
+      targetPos.set(focus[0] + 1.4, focus[1] + 1.0, focus[2] + 1.4);
     } else {
-      controls.target.set(0, 0, 0);
-      camera.position.set(...PRESET_POS[preset]);
+      targetLook.set(0, 0, 0);
+      targetPos.set(...PRESET_POS[preset]);
     }
+    moving.current = true;
+  }, [preset, focus, targetPos, targetLook, controls]);
+
+  // Any drag / zoom / pan cancels the in-flight move so the learner keeps
+  // free control of the camera instead of being pulled back to the preset.
+  useEffect(() => {
+    if (!controls) return;
+    const release = () => { moving.current = false; };
+    controls.addEventListener("start", release);
+    return () => controls.removeEventListener("start", release);
+  }, [controls]);
+
+  useFrame(() => {
+    if (!controls || !moving.current) return;
+    camera.position.lerp(targetPos, 0.12);
+    controls.target.lerp(targetLook, 0.12);
     controls.update();
-  }, [preset, focus, camera, controls]);
+    if (camera.position.distanceTo(targetPos) < 0.01 && controls.target.distanceTo(targetLook) < 0.01) {
+      moving.current = false;
+    }
+  });
+
   return null;
 }
 
 function HotspotMarker({ h, active, onClick }: { h: Hotspot; active: boolean; onClick: () => void }) {
   const ref = useRef<THREE.Mesh>(null);
+  const [hover, setHover] = useState(false);
+  const target = useMemo(() => new THREE.Vector3(), []);
+
+  useFrame(({ clock }) => {
+    if (!ref.current) return;
+    const s = active ? 1.6 : hover ? 1.3 : 1;
+    ref.current.scale.lerp(target.setScalar(s), 0.12);
+    // local offset only — the parent group already sits at h.position
+    ref.current.position.y = Math.sin(clock.getElapsedTime() * 2 + h.position[0]) * 0.02;
+  });
+
   return (
     <group position={h.position as [number, number, number]}>
-      <mesh ref={ref} onClick={onClick} scale={active ? 1.6 : 1}>
+      <mesh
+        ref={ref}
+        onClick={onClick}
+        onPointerOver={() => setHover(true)}
+        onPointerOut={() => setHover(false)}
+      >
         <sphereGeometry args={[0.04, 16, 16]} />
-        <meshStandardMaterial color={active ? "#4A8BDF" : "#4A8BDF"} emissive={active ? "#4A8BDF" : "#000000"} emissiveIntensity={active ? 0.6 : 0} transparent opacity={0.85} />
+        <meshStandardMaterial color={active ? "#2563EB" : "#3B82F6"} emissive={active ? "#2563EB" : "#000000"} emissiveIntensity={active ? 0.4 : 0} transparent opacity={0.85} />
       </mesh>
-      <Html distanceFactor={9} style={{ pointerEvents: "none" }}>
+      {/* No distanceFactor: pins keep a constant screen size instead of
+          ballooning over the model as the camera moves closer. */}
+      <Html zIndexRange={[10, 0]} style={{ pointerEvents: "none" }}>
         <button className={`hotspot-pin ${active ? "active" : ""}`} onClick={onClick} type="button" style={{ pointerEvents: "auto" }}>
           <span className="hotspot-pulse" />
           <span className="hotspot-dot" />
@@ -109,21 +172,44 @@ export function ModelViewer({ viewer, courseId }: { viewer: ViewerPayload; cours
   const [busy, setBusy] = useState<string | null>(null);
   const [preset, setPreset] = useState<Preset>("iso");
   const [active, setActive] = useState<Hotspot | null>(null);
+  // Idle spin is a hint only: once the learner touches the model it stays off
+  // for the rest of the session so manual inspection is never interrupted.
+  const [autoRotate, setAutoRotate] = useState(true);
+  const tookControl = useRef(false);
+  function stopAutoRotate() { tookControl.current = true; setAutoRotate(false); }
   const glbUrl = viewer.glb_uri.replace(/^local:\/\//, "/media/").replace(/^s3:\/\/[^/]+\//, "/media/");
   const has3D = webglAvailable();
 
+  // Bumped on every select/close so a response that lands after the learner
+  // closed the panel (or picked another component) is discarded instead of
+  // popping the panel back open.
+  const reqId = useRef(0);
+
   async function selectComponent(h: Hotspot) {
-    setActive(h); setBusy(h.component); setExp(null);
-    try { setExp(await api.explainComponent(courseId, viewer.lesson_id, h.component)); }
-    catch { setExp({ answer: null, grounded: false, citations: [], related_lessons: [], thread_id: 0 }); }
-    finally { setBusy(null); }
+    const id = ++reqId.current;
+    setActive(h); setBusy(h.component); setExp(null); stopAutoRotate();
+    try {
+      const res = await api.explainComponent(courseId, viewer.lesson_id, h.component);
+      if (reqId.current === id) setExp(res);
+    } catch {
+      if (reqId.current === id) setExp({ answer: null, grounded: false, citations: [], related_lessons: [], thread_id: 0 });
+    } finally {
+      if (reqId.current === id) setBusy(null);
+    }
+  }
+
+  // The panel is open whenever `busy` or `exp` is set, so closing must clear
+  // all of them — clearing `active` alone left it stuck open.
+  function closePanel() {
+    reqId.current++;
+    setActive(null); setExp(null); setBusy(null);
   }
 
   if (!has3D) {
     return (
       <div>
         <Diagram2D viewer={viewer} onPick={(name) => selectComponent(viewer.hotspots.find((h) => h.component === name)!)} />
-        <ExplainPanel exp={exp} busy={busy} title={active?.component} onClose={() => setActive(null)} />
+        <ExplainPanel exp={exp} busy={busy} title={active?.component} onClose={closePanel} />
       </div>
     );
   }
@@ -131,10 +217,11 @@ export function ModelViewer({ viewer, courseId }: { viewer: ViewerPayload; cours
   return (
     <div>
       <div className="viewer-panel">
-        <PresetToolbar preset={preset} active={!!active} onChange={(p) => { setPreset(p); setActive(null); }} />
+        <PresetToolbar preset={preset} active={!!active} onChange={(p) => { setPreset(p); closePanel(); if (!tookControl.current) setAutoRotate(true); }} />
         <Canvas camera={{ position: PRESET_POS.iso, fov: 45 }}>
-          <ambientLight intensity={0.75} />
-          <directionalLight position={[5, 5, 5]} intensity={1.1} />
+          <ambientLight intensity={0.85} />
+          <directionalLight position={[5, 8, 5]} intensity={1.0} castShadow />
+          <directionalLight position={[-4, 3, -4]} intensity={0.4} color="#BFDBFE" />
           <Suspense fallback={<ModelLoader />}>
             <Bounds fit clip observe margin={1.2}>
               <ModelBoundary><Model url={glbUrl} /></ModelBoundary>
@@ -144,17 +231,17 @@ export function ModelViewer({ viewer, courseId }: { viewer: ViewerPayload; cours
                 onClick={() => selectComponent(h)} />
             ))}
           </Suspense>
-          <OrbitControls makeDefault enablePan enableZoom enableRotate />
+          <OrbitControls makeDefault enablePan enableZoom enableRotate autoRotate={autoRotate} autoRotateSpeed={0.8} onStart={stopAutoRotate} />
           <CameraRig preset={preset} focus={active ? (active.position as [number, number, number]) : null} />
         </Canvas>
       </div>
 
       <div className="viewer-caption">
-        <span className="muted">🖱 Drag to rotate · scroll to zoom · click a pin to inspect a component</span>
+        <span className="muted">Drag to rotate · scroll to zoom · click a pin to inspect a component</span>
         <span className="badge badge-gray">{viewer.name}</span>
       </div>
 
-      <ExplainPanel exp={exp} busy={busy} title={active?.component} onClose={() => setActive(null)} />
+      <ExplainPanel exp={exp} busy={busy} title={active?.component} onClose={closePanel} />
     </div>
   );
 }
@@ -177,7 +264,7 @@ function ExplainPanel({ exp, busy, title, onClose }: { exp: ChatResponse | null;
               <Citations items={exp.citations} />
             </>
           ) : (
-            <div className="card" style={{ background: "var(--warn-soft)", borderColor: "rgba(212,160,23,0.25)" }}>
+            <div className="card" style={{ background: "var(--warn-soft)", borderColor: "rgba(217,119,6,0.18)" }}>
               <div className="card-pad">
                 <div className="badge badge-amber mb">Not covered</div>
                 <div className="small">This component is not addressed by the course material.</div>
@@ -199,7 +286,7 @@ function Diagram2D({ viewer, onPick }: { viewer: ViewerPayload; onPick: (name: s
       <div className="badge badge-amber mb">3D unavailable on this device — showing a schematic</div>
       <div style={{ background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: 12, padding: 20 }}>
         <svg viewBox="0 0 400 240" style={{ width: "100%", height: 220 }}>
-          <rect x="80" y="80" width="240" height="90" rx={6} fill="var(--base-700)" stroke="var(--accent)" strokeWidth="2" />
+          <rect x="80" y="80" width="240" height="90" rx={6} fill="var(--base-900)" stroke="var(--accent)" strokeWidth="2" />
           <text x="200" y="130" fill="var(--text-main)" fontSize="13" textAnchor="middle" fontFamily="var(--font-sans)">{viewer.name}</text>
           {viewer.hotspots.map((h, i) => {
             const x = 100 + (i * 220) / Math.max(1, viewer.hotspots.length);
@@ -215,7 +302,9 @@ function Diagram2D({ viewer, onPick }: { viewer: ViewerPayload; onPick: (name: s
       </div>
       <div className="pill-row mt">
         {viewer.hotspots.map((h) => (
-          <button key={h.hotspot_key} className="btn btn-ghost btn-sm" onClick={() => onPick(h.component)}>📍 {h.component}</button>
+          <button key={h.hotspot_key} className="btn btn-ghost btn-sm" onClick={() => onPick(h.component)}>
+            <span className="row"><IconTile name="pin" size="sm" tone="slate" /> {h.component}</span>
+          </button>
         ))}
       </div>
     </div>

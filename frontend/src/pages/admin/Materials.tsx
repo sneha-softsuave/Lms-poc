@@ -5,6 +5,7 @@ import { Layout } from "../../components/Layout";
 import { api, Doc } from "../../api/client";
 import { useToast } from "../../components/Toast";
 import { StatusBadge, Empty, Spinner, Progress } from "../../components/ui";
+import { IconTile } from "../../components/icons";
 
 export default function Materials() {
   const toast = useToast();
@@ -61,7 +62,10 @@ export default function Materials() {
     <Layout title="Materials & AI Course Generation">
       <div className="card mb">
         <div className="card-pad">
-          <h3>Upload source material</h3>
+          <div className="row" style={{ marginBottom: 8 }}>
+            <IconTile name="upload" size="md" tone="blue" />
+          </div>
+          <h3 style={{ marginBottom: 6 }}>Upload source material</h3>
           <p className="muted small">
             PDF, DOCX, PPTX or TXT (scanned PDFs are OCR'd). The platform extracts the text with
             page/section provenance, then AI turns it into a structured draft course.
@@ -79,7 +83,7 @@ export default function Materials() {
             whileHover={{ scale: 1.005 }}
             whileTap={{ scale: 0.995 }}
           >
-            <div className="upload-zone-icon">📤</div>
+            <div className="upload-zone-icon"><IconTile name="upload" size="lg" tone="blue" /></div>
             <div className="upload-zone-title">{uploading ? "Uploading & extracting…" : drag ? "Drop file to upload" : "Click or drag a file here"}</div>
             <div className="upload-zone-hint">PDF, DOCX, PPTX, TXT · scanned PDFs are OCR'd</div>
             {uploading && (
@@ -94,7 +98,7 @@ export default function Materials() {
       <div className="card">
         <div className="card-head"><h3 style={{ margin: 0 }}>Uploaded documents</h3></div>
         {loading ? <Spinner label="Loading…" /> : docs.length === 0 ? (
-          <Empty icon="📄" title="No materials yet" hint="Upload a document to begin." />
+          <Empty icon={<IconTile name="document" size="lg" tone="slate" />} title="No materials yet" hint="Upload a document to begin." />
         ) : (
           <table>
             <thead><tr><th>Code</th><th>File</th><th>Extraction</th><th>Size</th><th>Status</th><th></th></tr></thead>
@@ -116,7 +120,7 @@ export default function Materials() {
                     <td style={{ textAlign: "right" }}>
                       <button className="btn btn-gold btn-sm" disabled={generating === d.id}
                         onClick={() => generate(d)}>
-                        {generating === d.id ? "Generating…" : "✨ Generate course"}
+                        {generating === d.id ? "Generating…" : "Generate course"}
                       </button>
                     </td>
                   </motion.tr>

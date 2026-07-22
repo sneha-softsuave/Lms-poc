@@ -5,6 +5,7 @@ import { Layout } from "../../components/Layout";
 import { api, CourseTree, Lesson, ViewerPayload } from "../../api/client";
 import { useToast } from "../../components/Toast";
 import { ProgressRing, Spinner, StepIndicator } from "../../components/ui";
+import { Icon, IconTile } from "../../components/icons";
 import { ModelViewer } from "../../components/ModelViewer";
 import { Chatbot } from "../../components/Chatbot";
 import { QuizPanel } from "../../components/QuizPanel";
@@ -120,7 +121,7 @@ export default function CourseView() {
             {course.modules.map((m) => (
               <div key={m.id}>
                 <div className="nav-label" style={{ color: "var(--text-dim)", padding: "10px 16px 4px" }}>{m.title}</div>
-                {m.lessons.map((l, idx) => {
+                {m.lessons.map((l) => {
                   const isActive = activeLesson?.id === l.id;
                   const isCompleted = completed.has(l.id);
                   const isCurrent = isActive && !isCompleted;
@@ -135,9 +136,9 @@ export default function CourseView() {
                       }}>
                       <span className={isActive ? "accent-text" : "muted"} style={{ fontWeight: isActive ? 600 : 400 }}>{l.title}</span>
                       <span className="row" style={{ gap: 6 }}>
-                        {isCompleted && <span style={{ color: "var(--ok)", fontSize: 13 }}>✓</span>}
+                        {isCompleted && <span style={{ color: "var(--ok)", fontSize: 14 }}><Icon name="check" /></span>}
                         {isCurrent && <span style={{ color: "var(--accent)", fontSize: 10 }}>●</span>}
-                        {l.model3d_id && <span title="Has 3D model" style={{ color: "var(--text-dim)", fontSize: 12 }}>🧊</span>}
+                        {l.model3d_id && <span title="Has 3D model" style={{ color: "var(--text-dim)", fontSize: 12 }}><IconTile name="cube" size="sm" tone="slate" /></span>}
                       </span>
                     </div>
                   );
@@ -169,7 +170,7 @@ export default function CourseView() {
                     <p style={{ lineHeight: 1.75, color: "var(--text-main)" }}>{activeLesson.body}</p>
                     {enrolled && (
                       <button className="btn btn-success mt" disabled={completed.has(activeLesson.id)} onClick={() => complete(activeLesson)}>
-                        {completed.has(activeLesson.id) ? "✓ Completed" : "Mark lesson complete"}
+                        {completed.has(activeLesson.id) ? <span className="row"><Icon name="check" /> Completed</span> : "Mark lesson complete"}
                       </button>
                     )}
                   </motion.div>

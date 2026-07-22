@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Layout } from "../../components/Layout";
 import { api, Enrolment } from "../../api/client";
 import { ProgressRing, StatusBadge, Empty, Spinner } from "../../components/ui";
+import { IconTile } from "../../components/icons";
 
 export default function MyLearning() {
   const nav = useNavigate();
@@ -17,7 +18,7 @@ export default function MyLearning() {
   return (
     <Layout title="My learning">
       {items.length === 0 ? (
-        <div className="card"><Empty icon="🎓" title="You're not enrolled in any courses"
+        <div className="card"><Empty icon={<IconTile name="learning" size="lg" tone="slate" />} title="You're not enrolled in any courses"
           hint="Browse the catalog and enrol to get started." /></div>
       ) : (
         <div className="grid grid-2">
@@ -50,7 +51,9 @@ export default function MyLearning() {
                       {e.progress_pct === 0 ? "Start" : e.status === "completed" ? "Review" : "Resume →"}
                     </button>
                     {e.status === "completed" && (
-                      <button className="btn btn-gold btn-sm btn-block" onClick={() => nav("/certificates")}>🏅 Certificate</button>
+                      <button className="btn btn-gold btn-sm btn-block" onClick={() => nav("/certificates")}>
+                        <span className="row"><IconTile name="certificates" size="sm" tone="slate" /> Certificate</span>
+                      </button>
                     )}
                   </div>
                 </div>

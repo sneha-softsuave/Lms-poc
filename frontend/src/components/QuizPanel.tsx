@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { api } from "../api/client";
 import { DifficultyBadge, Citations, Spinner, Empty, ScoreRing, Progress } from "./ui";
+import { IconTile } from "./icons";
 import { useToast } from "./Toast";
 
 const slide = {
@@ -35,7 +36,7 @@ export function QuizPanel({ moduleId }: { moduleId: number }) {
 
   if (loading) return <Spinner label="Loading quiz…" />;
   if (!quiz || quiz.questions.length === 0)
-    return <Empty icon="📝" title="No quiz available" hint="This module has no approved questions yet." />;
+    return <Empty icon={<IconTile name="course" size="lg" tone="slate" />} title="No quiz available" hint="This module has no approved questions yet." />;
 
   if (result) {
     return (

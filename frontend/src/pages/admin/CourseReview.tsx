@@ -5,6 +5,7 @@ import { Layout } from "../../components/Layout";
 import { api, CourseTree, Question, Model3D } from "../../api/client";
 import { useToast } from "../../components/Toast";
 import { StatusBadge, DifficultyBadge, Citations, Spinner, Section } from "../../components/ui";
+import { Icon, IconTile } from "../../components/icons";
 
 export default function CourseReview() {
   const { id } = useParams();
@@ -91,7 +92,7 @@ export default function CourseReview() {
             </div>
             <p className="muted" style={{ margin: "6px 0 0" }}>{course.description}</p>
             <div className="pill-row mt">
-              {course.objectives?.map((o, i) => <span key={i} className="badge badge-blue">🎯 {o}</span>)}
+              {course.objectives?.map((o, i) => <span key={i} className="badge badge-blue"><span className="row"><Icon name="award" /> {o}</span></span>)}
             </div>
           </div>
           <div style={{ textAlign: "right" }}>
@@ -105,7 +106,7 @@ export default function CourseReview() {
             ) : (
               <>
                 <button className="btn btn-success" disabled={publishing || pending > 0} onClick={publish}>
-                  {publishing ? "Publishing…" : "✓ Publish course"}
+                  {publishing ? "Publishing…" : <span className="row"><Icon name="check" /> Publish course</span>}
                 </button>
                 <div className="muted small mt">
                   {pending > 0 ? `${pending} question(s) still pending` : "All questions reviewed"}
@@ -116,7 +117,7 @@ export default function CourseReview() {
         </div>
         {isPublished && (
           <div className="card-pad" style={{ borderTop: "1px solid var(--border)", background: "var(--ok-soft)" }}>
-            <b style={{ color: "var(--ok)" }}>✎ Editing a live course.</b>{" "}
+            <b style={{ color: "var(--ok)" }}>Editing a live course.</b>{" "}
             <span className="small">3D model changes below apply to learners immediately — no re-publish needed.</span>
           </div>
         )}
@@ -215,7 +216,7 @@ export default function CourseReview() {
                   <ul className="small" style={{ margin: "8px 0", paddingLeft: 18 }}>
                     {q.options.map((o, idx) => (
                       <li key={idx} style={{ color: o === q.correct_answer ? "var(--ok)" : undefined, fontWeight: o === q.correct_answer ? 700 : 400 }}>
-                        {o} {o === q.correct_answer && "✓"}
+                        {o} {o === q.correct_answer && <span style={{ color: "var(--ok)", marginLeft: 4, display: "inline-block", verticalAlign: "middle" }}><Icon name="check" /></span>}
                       </li>
                     ))}
                   </ul>

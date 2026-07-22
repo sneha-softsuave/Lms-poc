@@ -2,19 +2,30 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { ReactNode } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "../auth/AuthContext";
+import { IconName, IconTile } from "./icons";
 
-const ADMIN_NAV = [
-  { to: "/admin", label: "Overview", ico: "▤", end: true },
-  { to: "/admin/materials", label: "Materials & AI", ico: "📤" },
-  { to: "/admin/courses", label: "Courses & Review", ico: "📚" },
-  { to: "/admin/analytics", label: "Analytics", ico: "📊" },
-  { to: "/admin/audit", label: "Audit log", ico: "🛡" },
+const ADMIN_NAV: { to: string; label: string; ico: IconName; end?: boolean }[] = [
+  { to: "/admin", label: "Overview", ico: "overview", end: true },
+  { to: "/admin/materials", label: "Materials & AI", ico: "materials" },
+  { to: "/admin/courses", label: "Courses & Review", ico: "courses" },
+  { to: "/admin/analytics", label: "Analytics", ico: "analytics" },
+  { to: "/admin/audit", label: "Audit log", ico: "audit" },
 ];
-const LEARNER_NAV = [
-  { to: "/catalog", label: "Course catalog", ico: "🗂" },
-  { to: "/learning", label: "My learning", ico: "🎓" },
-  { to: "/certificates", label: "Certificates", ico: "🏅" },
+const LEARNER_NAV: { to: string; label: string; ico: IconName; end?: boolean }[] = [
+  { to: "/catalog", label: "Course catalog", ico: "catalog" },
+  { to: "/learning", label: "My learning", ico: "learning" },
+  { to: "/certificates", label: "Certificates", ico: "certificates" },
 ];
+
+function LogoMark() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+      <path d="M12 2L22 8.5V15.5L12 22L2 15.5V8.5L12 2Z" fill="currentColor" opacity="0.15" />
+      <path d="M12 6L18 10V15L12 19L6 15V10L12 6Z" fill="currentColor" />
+      <path d="M12 2L22 8.5V15.5L12 22L2 15.5V8.5L12 2Z" stroke="currentColor" strokeWidth="2" fill="none" />
+    </svg>
+  );
+}
 
 export function Layout({ title, children }: { title: string; children: ReactNode }) {
   const { user, logout } = useAuth();
@@ -27,7 +38,7 @@ export function Layout({ title, children }: { title: string; children: ReactNode
     <div className="app">
       <aside className="sidebar">
         <div className="brand">
-          <div className="brand-mark">◆</div>
+          <div className="brand-mark"><LogoMark /></div>
           <div>
             <div className="brand-name">Defense AI LMS</div>
             <div className="brand-sub">Training & Simulation</div>
@@ -35,22 +46,23 @@ export function Layout({ title, children }: { title: string; children: ReactNode
         </div>
         <div className="nav-label">{isAdmin ? "Administration" : "Learning"}</div>
         {items.map((it) => (
-          <NavLink key={it.to} to={it.to} end={(it as any).end}
+          <NavLink key={it.to} to={it.to} end={it.end}
             className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}>
-            <span className="ico">{it.ico}</span> {it.label}
+            <IconTile name={it.ico} size="sm" tone={it.ico === "audit" ? "slate" : "blue"} />
+            <span className="nav-item-label">{it.label}</span>
           </NavLink>
         ))}
         <div className="sidebar-foot">
           <div className="user-chip">
             <div className="avatar">{initials}</div>
             <div style={{ minWidth: 0 }}>
-              <div style={{ color: "#fff", fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis" }}>
+              <div style={{ color: "var(--text-main)", fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis" }}>
                 {user?.full_name || user?.email}
               </div>
               <div className="brand-sub">{user?.role}</div>
             </div>
           </div>
-          <button className="btn btn-ghost btn-sm btn-block mt" style={{ color: "#cdd8e6", borderColor: "#1b3557" }}
+          <button className="btn btn-ghost btn-sm btn-block mt"
             onClick={() => { logout(); nav("/login"); }}>
             Sign out
           </button>

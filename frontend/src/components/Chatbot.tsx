@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { api, ChatResponse } from "../api/client";
+import { IconTile } from "./icons";
 
 interface Turn { q: string; res: ChatResponse; }
 
@@ -52,7 +53,7 @@ export function Chatbot({ courseId, lessonId }: { courseId: number; lessonId: nu
       setThread(res.thread_id);
       setTurns((t) => [...t, { q: question, res }]);
     } catch (e: any) {
-      setTurns((t) => [...t, { q: question, res: { answer: `⚠ ${e.message}`, grounded: true, citations: [], related_lessons: [], thread_id: thread || 0 } }]);
+      setTurns((t) => [...t, { q: question, res: { answer: `Error: ${e.message}`, grounded: true, citations: [], related_lessons: [], thread_id: thread || 0 } }]);
     } finally { setBusy(false); }
   }
 
@@ -68,7 +69,7 @@ export function Chatbot({ courseId, lessonId }: { courseId: number; lessonId: nu
       <div className="chatbot-feed">
         {turns.length === 0 && (
           <div className="chatbot-empty">
-            <div className="big">◈</div>
+            <div className="big"><IconTile name="chat" size="lg" tone="blue" /></div>
             <p className="muted small">Ask anything about this course. Answers are grounded in the source material and cited — the tutor says "not covered" rather than guessing.</p>
           </div>
         )}

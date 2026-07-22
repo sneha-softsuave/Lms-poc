@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Layout } from "../../components/Layout";
 import { api } from "../../api/client";
 import { Empty, Spinner } from "../../components/ui";
+import { IconTile } from "../../components/icons";
 
 const ACTION_TONE: Record<string, string> = {
   "course.publish": "badge-green", "enrolment.create": "badge-blue",
@@ -35,11 +36,14 @@ export default function Audit() {
     <Layout title="Audit log">
       <div className="card">
         <div className="card-head">
-          <h3 style={{ margin: 0 }}>Immutable activity log</h3>
+          <div className="row">
+            <IconTile name="audit" size="sm" tone="slate" />
+            <h3 style={{ margin: 0 }}>Immutable activity log</h3>
+          </div>
           <span className="muted small">chatbot · quizzes · enrolments · publishes · admin actions</span>
         </div>
         {loading ? <SkeletonAudit /> : events.length === 0 ? (
-          <Empty icon="🛡" title="No events yet" hint="Activity will appear here as the platform is used." />
+          <Empty icon={<IconTile name="audit" size="lg" tone="slate" />} title="No events yet" hint="Activity will appear here as the platform is used." />
         ) : (
           <table>
             <thead><tr><th>#</th><th>Action</th><th>Entity</th><th>Actor</th><th>Detail</th></tr></thead>

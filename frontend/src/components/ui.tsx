@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { Icon } from "./icons";
 import { motion } from "framer-motion";
 
 export function StatusBadge({ status }: { status: string }) {
@@ -46,7 +47,7 @@ export function ProgressRing({ pct, size = 56, stroke = 5 }: { pct: number; size
   );
 }
 
-export function Empty({ icon = "📭", title, hint }: { icon?: string; title: string; hint?: string }) {
+export function Empty({ icon = "📭", title, hint }: { icon?: ReactNode; title: string; hint?: string }) {
   return (
     <div className="empty">
       <div className="big">{icon}</div>
@@ -104,7 +105,7 @@ export function StepIndicator({ steps, current, onChange }: { steps: { id: strin
             disabled={!onChange}
             type="button"
           >
-            <span className="step-num">{completed ? "✓" : i + 1}</span>
+            <span className="step-num">{completed ? <Icon name="check" className="step-check" /> : i + 1}</span>
             <span className="step-label">{s.label}</span>
             {i < steps.length - 1 && <span className="step-line" />}
           </button>

@@ -5,6 +5,7 @@ import { Layout } from "../../components/Layout";
 import { api } from "../../api/client";
 import { useToast } from "../../components/Toast";
 import { Empty, Spinner, SkeletonCard, Progress } from "../../components/ui";
+import { IconTile } from "../../components/icons";
 
 export default function Catalog() {
   const nav = useNavigate();
@@ -47,7 +48,7 @@ export default function Catalog() {
   return (
     <Layout title="Course catalog">
       {total === 0 ? (
-        <div className="card"><Empty icon="🗂" title="No published courses yet"
+        <div className="card"><Empty icon={<IconTile name="catalog" size="lg" tone="slate" />} title="No published courses yet"
           hint="An administrator needs to upload material, generate a course, and publish it." /></div>
       ) : groups.map((g, gi) => (
         <motion.div
@@ -60,6 +61,7 @@ export default function Catalog() {
         >
           <div className="spread mb">
             <div className="row">
+              <IconTile name="book" size="sm" tone="blue" />
               <h3 style={{ margin: 0 }}>{g.subject_title}</h3>
               <span className="badge badge-gray mono">{g.courses.length} course(s)</span>
             </div>

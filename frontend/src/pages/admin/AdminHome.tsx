@@ -4,8 +4,9 @@ import { motion } from "framer-motion";
 import { Layout } from "../../components/Layout";
 import { api } from "../../api/client";
 import { Spinner, SkeletonCard, SkeletonText } from "../../components/ui";
+import { IconName, IconTile } from "../../components/icons";
 
-function Stat({ ico, val, label, tone }: { ico: string; val: any; label: string; tone: string }) {
+function Stat({ ico, val, label, tone }: { ico: IconName; val: any; label: string; tone: "blue" | "green" | "amber" | "red" }) {
   return (
     <motion.div
       className="card stat"
@@ -14,7 +15,7 @@ function Stat({ ico, val, label, tone }: { ico: string; val: any; label: string;
       transition={{ duration: 0.25 }}
     >
       <div className="row" style={{ justifyContent: "space-between" }}>
-        <div className="stat-ico" style={{ background: `var(--${tone}-soft)`, color: `var(--${tone})` }}>{ico}</div>
+        <IconTile name={ico} size="md" tone={tone} />
       </div>
       <div className="stat-val mt">{val}</div>
       <div className="stat-label">{label}</div>
@@ -25,7 +26,7 @@ function Stat({ ico, val, label, tone }: { ico: string; val: any; label: string;
 function SkeletonStat() {
   return (
     <div className="card stat">
-      <div className="skeleton stat-ico" style={{ width: 40, height: 40, borderRadius: 10 }} />
+      <div className="skeleton stat-ico" style={{ width: 44, height: 44, borderRadius: 12 }} />
       <div className="skeleton mt" style={{ width: 60, height: 28, borderRadius: 4 }} />
       <div className="skeleton mt" style={{ width: 100, height: 12, borderRadius: 4 }} />
     </div>
@@ -63,10 +64,10 @@ export default function AdminHome() {
   return (
     <Layout title="Administration overview">
       <div className="grid grid-4 mb">
-        <Stat ico="📄" val={docs.length} label="Uploaded documents" tone="blue" />
-        <Stat ico="📝" val={drafts.length} label="Draft courses to review" tone="amber" />
-        <Stat ico="📚" val={publishedCount} label="Published courses" tone="green" />
-        <Stat ico="🎓" val={enrolled} label="Total enrolments" tone="blue" />
+        <Stat ico="document" val={docs.length} label="Uploaded documents" tone="blue" />
+        <Stat ico="course" val={drafts.length} label="Draft courses to review" tone="amber" />
+        <Stat ico="book" val={publishedCount} label="Published courses" tone="green" />
+        <Stat ico="learning" val={enrolled} label="Total enrolments" tone="blue" />
       </div>
 
       <div className="grid grid-2" style={{ alignItems: "start" }}>
@@ -94,10 +95,18 @@ export default function AdminHome() {
         <div className="card">
           <div className="card-head"><h3 style={{ margin: 0 }}>Quick actions</h3></div>
           <div className="card-pad">
-            <Link to="/admin/materials" className="btn btn-primary btn-block mb">📤 Upload material & generate a course</Link>
-            <Link to="/admin/courses" className="btn btn-ghost btn-block mb">📚 Review & publish draft courses</Link>
-            <Link to="/admin/analytics" className="btn btn-ghost btn-block mb">📊 Cohort analytics & weakest topics</Link>
-            <Link to="/admin/audit" className="btn btn-ghost btn-block">🛡 Audit log</Link>
+            <Link to="/admin/materials" className="btn btn-primary btn-block mb" style={{ gap: 10 }}>
+              <IconTile name="upload" size="sm" tone="slate" /> Upload material & generate a course
+            </Link>
+            <Link to="/admin/courses" className="btn btn-ghost btn-block mb" style={{ gap: 10 }}>
+              <IconTile name="course" size="sm" tone="slate" /> Review & publish draft courses
+            </Link>
+            <Link to="/admin/analytics" className="btn btn-ghost btn-block mb" style={{ gap: 10 }}>
+              <IconTile name="analytics" size="sm" tone="slate" /> Cohort analytics & weakest topics
+            </Link>
+            <Link to="/admin/audit" className="btn btn-ghost btn-block" style={{ gap: 10 }}>
+              <IconTile name="audit" size="sm" tone="slate" /> Audit log
+            </Link>
             <div className="divider" />
             <p className="muted small" style={{ margin: 0 }}>
               Workflow: upload → generate → review & approve questions → publish. Published courses
