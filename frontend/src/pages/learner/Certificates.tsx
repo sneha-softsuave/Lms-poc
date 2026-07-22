@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Layout } from "../../components/Layout";
 import { api, Certificate } from "../../api/client";
-import { Empty, Spinner } from "../../components/ui";
+import { Empty, Spinner, ProgressRing } from "../../components/ui";
 
 export default function Certificates() {
   const [certs, setCerts] = useState<Certificate[]>([]);
@@ -19,37 +20,58 @@ export default function Certificates() {
           hint="Complete a course to earn a completion certificate." /></div>
       ) : (
         <div className="grid grid-2">
-          {certs.map((c) => (
-            <div key={c.serial} className="card">
+          {certs.map((c, i) => (
+            <motion.div
+              key={c.serial}
+              className="card"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25, delay: i * 0.06 }}
+            >
               <div className="card-pad">
-                <div className="spread mb"><span className="badge badge-green">Completed</span><span className="muted small">{c.serial}</span></div>
+                <div className="spread mb"><span className="badge badge-green">Completed</span><span className="muted small mono">{c.serial}</span></div>
                 <h4 style={{ margin: "0 0 4px" }}>{c.course_title}</h4>
                 <div className="muted small">{c.subject_title}</div>
-                <div className="spread mt"><span className="small">Score {c.score_pct}%</span>
+                <div className="spread mt" style={{ alignItems: "flex-start" }}>
+                  <ProgressRing pct={c.score_pct} size={44} stroke={4} />
                   <button className="btn btn-primary btn-sm" onClick={() => setView(c)}>View certificate</button>
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       )}
 
-      {view && <CertModal cert={view} onClose={() => setView(null)} />}
+      <AnimatePresence>
+        {view && <CertModal cert={view} onClose={() => setView(null)} />}
+      </AnimatePresence>
     </Layout>
   );
 }
 
 function CertModal({ cert, onClose }: { cert: Certificate; onClose: () => void }) {
   return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "#0b1a2fcc", display: "grid", placeItems: "center", zIndex: 40 }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ width: 620, maxWidth: "92vw", background: "#fff", borderRadius: 14, padding: 8 }}>
-        <div style={{ border: "3px double var(--gold)", borderRadius: 10, padding: "36px 40px", textAlign: "center" }}>
-          <div className="brand-sub" style={{ color: "var(--slate-500)" }}>Defense AI Training & Simulation Platform</div>
-          <h2 style={{ marginTop: 18, color: "var(--navy-900)" }}>Certificate of Completion</h2>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={onClose}
+      style={{ position: "fixed", inset: 0, background: "rgba(10,14,20,0.85)", display: "grid", placeItems: "center", zIndex: 40 }}
+    >
+      <motion.div
+        initial={{ scale: 0.96, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.96, opacity: 0 }}
+        onClick={(e) => e.stopPropagation()}
+        style={{ width: 620, maxWidth: "92vw", background: "var(--bg-panel)", borderRadius: 12, padding: 8, border: "1px solid var(--border)" }}
+      >
+        <div style={{ border: "3px double var(--accent)", borderRadius: 8, padding: "36px 40px", textAlign: "center" }}>
+          <div className="brand-sub" style={{ color: "var(--text-dim)" }}>Defense AI Training & Simulation Platform</div>
+          <h2 style={{ marginTop: 18, color: "var(--text-main)" }}>Certificate of Completion</h2>
           <p className="muted" style={{ margin: "6px 0 18px" }}>This certifies that</p>
-          <div style={{ fontSize: 24, fontWeight: 800, color: "var(--navy-800)" }}>{cert.learner_name}</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: "var(--accent-bright)" }}>{cert.learner_name}</div>
           <p className="muted" style={{ margin: "16px 0 4px" }}>has successfully completed</p>
-          <div style={{ fontSize: 18, fontWeight: 700 }}>{cert.course_title}</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text-main)" }}>{cert.course_title}</div>
           <div className="muted small">{cert.subject_title}</div>
           <div className="spread mt-lg" style={{ marginTop: 28 }}>
             <div className="small"><b>Score</b><div className="muted">{cert.score_pct}%</div></div>
@@ -61,7 +83,7 @@ function CertModal({ cert, onClose }: { cert: Certificate; onClose: () => void }
           <button className="btn btn-ghost btn-sm" onClick={() => window.print()}>Print</button>
           <button className="btn btn-primary btn-sm" onClick={onClose}>Close</button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

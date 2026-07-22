@@ -1,14 +1,28 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import { Layout } from "../../components/Layout";
 import { api, CourseTree, Lesson, ViewerPayload } from "../../api/client";
 import { useToast } from "../../components/Toast";
-import { Progress, Spinner } from "../../components/ui";
+import { ProgressRing, Spinner, StepIndicator } from "../../components/ui";
 import { ModelViewer } from "../../components/ModelViewer";
 import { Chatbot } from "../../components/Chatbot";
 import { QuizPanel } from "../../components/QuizPanel";
 
 type Tab = "lesson" | "3d" | "quiz";
+
+const STEPS = [
+  { id: "lesson", label: "Lesson" },
+  { id: "3d", label: "Interactive 3D" },
+  { id: "quiz", label: "Module quiz" },
+];
+
+const stepTransition = {
+  initial: { opacity: 0, x: 12 },
+  animate: { opacity: 1, x: 0 },
+  exit: { opacity: 0, x: -12 },
+  transition: { duration: 0.2, ease: [0.16, 1, 0.3, 1] as const },
+};
 
 export default function CourseView() {
   const { id } = useParams();
@@ -26,6 +40,7 @@ export default function CourseView() {
   const [loading, setLoading] = useState(true);
 
   const allLessons = useMemo(() => course?.modules.flatMap((m) => m.lessons) || [], [course]);
+  const lessonIndex = useMemo(() => activeLesson ? allLessons.findIndex((l) => l.id === activeLesson.id) : -1, [activeLesson, allLessons]);
 
   async function load() {
     try {
@@ -42,7 +57,6 @@ export default function CourseView() {
   }
   useEffect(() => { load(); }, [courseId]);
 
-  // Load 3D payload when the active lesson has a model & the 3D tab is opened.
   useEffect(() => {
     setViewer(null);
     if (activeLesson?.model3d_id) {
@@ -50,7 +64,6 @@ export default function CourseView() {
     }
   }, [activeLesson]);
 
-  // Time-on-task (FR-5.7.1): send a heartbeat every 30s while enrolled & studying.
   useEffect(() => {
     if (!enrolled) return;
     const t = setInterval(() => { api.heartbeat(courseId, 30).catch(() => {}); }, 30000);
@@ -67,7 +80,7 @@ export default function CourseView() {
       const r = await api.completeLesson(lesson.id);
       setProgress(r.progress_pct);
       setCompleted((s) => new Set(s).add(lesson.id));
-      toast.push(r.progress_pct === 100 ? "Course complete! 🎉 Certificate issued — see Certificates" : "Lesson completed", "ok");
+      toast.push(r.progress_pct === 100 ? "Course complete! Certificate issued — see Certificates" : "Lesson completed", "ok");
     } catch (e: any) { toast.push(e.message, "err"); }
   }
 
@@ -79,7 +92,7 @@ export default function CourseView() {
 
   return (
     <Layout title={course.title}>
-      <div className="spread mb">
+      <div className="spread mb" style={{ alignItems: "flex-start" }}>
         <div>
           <div className="row"><h2 style={{ margin: 0 }}>{course.title}</h2></div>
           <p className="muted" style={{ margin: "4px 0 0" }}>{course.description}</p>
@@ -87,33 +100,48 @@ export default function CourseView() {
         {!enrolled ? (
           <button className="btn btn-primary" onClick={enrol}>Enrol to start</button>
         ) : (
-          <div style={{ width: 200 }}>
-            <div className="spread small"><span className="muted">Progress</span><b>{progress}%</b></div>
-            <Progress pct={progress} />
+          <div className="row" style={{ gap: 12 }}>
+            <div style={{ textAlign: "right" }}>
+              <div className="small muted" style={{ fontFamily: "var(--font-mono)", textTransform: "uppercase" }}>Course progress</div>
+              <div className="small" style={{ color: "var(--text-muted)" }}>{progress}% complete</div>
+            </div>
+            <ProgressRing pct={progress} size={52} stroke={5} />
           </div>
         )}
       </div>
 
-      <div className="grid" style={{ gridTemplateColumns: "260px 1fr 340px", alignItems: "start" }}>
+      <StepIndicator steps={STEPS} current={tab} onChange={(id) => setTab(id as Tab)} />
+
+      <div className="grid mt" style={{ gridTemplateColumns: "260px 1fr 340px", alignItems: "start" }}>
         {/* Lesson list */}
-        <div className="card">
+        <div className="card" style={{ overflow: "hidden" }}>
           <div className="card-head"><b>Course content</b></div>
           <div style={{ padding: "8px 0" }}>
             {course.modules.map((m) => (
               <div key={m.id}>
-                <div className="nav-label" style={{ color: "var(--slate-500)", padding: "10px 16px 4px" }}>{m.title}</div>
-                {m.lessons.map((l) => (
-                  <div key={l.id} onClick={() => openLesson(l, m.id)}
-                    className="spread" style={{
-                      padding: "9px 16px", cursor: "pointer", fontSize: 14,
-                      background: activeLesson?.id === l.id ? "var(--slate-100)" : undefined,
-                      borderLeft: activeLesson?.id === l.id ? "3px solid var(--navy-700)" : "3px solid transparent",
-                    }}>
-                    <span>{l.title}</span>
-                    {completed.has(l.id) && <span style={{ color: "var(--green)" }}>✓</span>}
-                    {l.model3d_id && <span title="Has 3D model">🧊</span>}
-                  </div>
-                ))}
+                <div className="nav-label" style={{ color: "var(--text-dim)", padding: "10px 16px 4px" }}>{m.title}</div>
+                {m.lessons.map((l, idx) => {
+                  const isActive = activeLesson?.id === l.id;
+                  const isCompleted = completed.has(l.id);
+                  const isCurrent = isActive && !isCompleted;
+                  return (
+                    <div key={l.id} onClick={() => openLesson(l, m.id)}
+                      className="spread"
+                      style={{
+                        padding: "9px 14px 9px 16px", cursor: "pointer", fontSize: 14,
+                        background: isActive ? "rgba(74, 139, 223, 0.10)" : undefined,
+                        borderLeft: isActive ? "3px solid var(--accent)" : "3px solid transparent",
+                        transition: "background 150ms ease-out",
+                      }}>
+                      <span className={isActive ? "accent-text" : "muted"} style={{ fontWeight: isActive ? 600 : 400 }}>{l.title}</span>
+                      <span className="row" style={{ gap: 6 }}>
+                        {isCompleted && <span style={{ color: "var(--ok)", fontSize: 13 }}>✓</span>}
+                        {isCurrent && <span style={{ color: "var(--accent)", fontSize: 10 }}>●</span>}
+                        {l.model3d_id && <span title="Has 3D model" style={{ color: "var(--text-dim)", fontSize: 12 }}>🧊</span>}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             ))}
           </div>
@@ -121,37 +149,43 @@ export default function CourseView() {
 
         {/* Main panel */}
         <div>
-          <div className="card">
-            <div className="card-head" style={{ gap: 8 }}>
-              <div className="row">
-                <button className={`btn btn-sm ${tab === "lesson" ? "btn-primary" : "btn-ghost"}`} onClick={() => setTab("lesson")}>Lesson</button>
-                <button className={`btn btn-sm ${tab === "3d" ? "btn-primary" : "btn-ghost"}`}
-                  disabled={!activeLesson?.model3d_id} onClick={() => setTab("3d")}>
-                  Interactive 3D {activeLesson?.model3d_id ? "🧊" : ""}
-                </button>
-                <button className={`btn btn-sm ${tab === "quiz" ? "btn-primary" : "btn-ghost"}`} onClick={() => setTab("quiz")}>Module quiz</button>
-              </div>
+          <div className="card" style={{ minHeight: 480 }}>
+            <div className="card-head" style={{ gap: 8, justifyContent: "flex-start" }}>
+              <span className="badge badge-gray" style={{ textTransform: "none" }}>Step {STEPS.findIndex((s) => s.id === tab) + 1} of {STEPS.length}</span>
+              <span className="small muted" style={{ fontFamily: "var(--font-mono)" }}>
+                {tab === "lesson" && activeLesson?.title}
+                {tab === "3d" && (activeLesson?.model3d_id ? "Interactive 3D model" : "No model for this lesson")}
+                {tab === "quiz" && "Knowledge check"}
+              </span>
             </div>
-            <div className="card-pad">
-              {tab === "lesson" && activeLesson && (
-                <div>
-                  <div className="spread mb">
-                    <h3 style={{ margin: 0 }}>{activeLesson.title}</h3>
-                    {activeLesson.source_ref?.page && <span className="badge badge-gray">source p{activeLesson.source_ref.page}</span>}
-                  </div>
-                  <p style={{ lineHeight: 1.7 }}>{activeLesson.body}</p>
-                  {enrolled && (
-                    <button className="btn btn-success mt" disabled={completed.has(activeLesson.id)} onClick={() => complete(activeLesson)}>
-                      {completed.has(activeLesson.id) ? "✓ Completed" : "Mark lesson complete"}
-                    </button>
-                  )}
-                </div>
-              )}
-              {tab === "3d" && (
-                viewer ? <ModelViewer viewer={viewer} courseId={courseId} />
-                  : <Spinner label="Loading 3D model…" />
-              )}
-              {tab === "quiz" && activeModule && <QuizPanel moduleId={activeModule} />}
+            <div className="card-pad" style={{ position: "relative" }}>
+              <AnimatePresence mode="wait">
+                {tab === "lesson" && activeLesson && (
+                  <motion.div key="lesson" {...stepTransition}>
+                    <div className="spread mb">
+                      <h3 style={{ margin: 0 }}>{activeLesson.title}</h3>
+                      {activeLesson.source_ref?.page && <span className="badge badge-gray">source p{activeLesson.source_ref.page}</span>}
+                    </div>
+                    <p style={{ lineHeight: 1.75, color: "var(--text-main)" }}>{activeLesson.body}</p>
+                    {enrolled && (
+                      <button className="btn btn-success mt" disabled={completed.has(activeLesson.id)} onClick={() => complete(activeLesson)}>
+                        {completed.has(activeLesson.id) ? "✓ Completed" : "Mark lesson complete"}
+                      </button>
+                    )}
+                  </motion.div>
+                )}
+                {tab === "3d" && (
+                  <motion.div key="3d" {...stepTransition}>
+                    {viewer ? <ModelViewer viewer={viewer} courseId={courseId} />
+                      : <Spinner label="Loading 3D model…" />}
+                  </motion.div>
+                )}
+                {tab === "quiz" && activeModule && (
+                  <motion.div key="quiz" {...stepTransition}>
+                    <QuizPanel moduleId={activeModule} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
 

@@ -2,7 +2,30 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Layout } from "../../components/Layout";
 import { api, Course } from "../../api/client";
-import { StatusBadge, Empty, Spinner } from "../../components/ui";
+import { StatusBadge, Empty, Spinner, SkeletonText } from "../../components/ui";
+
+function SkeletonRow({ cols = 4 }: { cols?: number }) {
+  return (
+    <tr>
+      {Array.from({ length: cols }).map((_, i) => (
+        <td key={i}><div className="skeleton" style={{ width: i === 0 ? "70%" : "80%", height: 12, borderRadius: 4 }} /></td>
+      ))}
+    </tr>
+  );
+}
+
+function SkeletonTable() {
+  return (
+    <table>
+      <thead><tr><th>Course</th><th>Objectives</th><th>Version</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        <SkeletonRow cols={5} />
+        <SkeletonRow cols={5} />
+        <SkeletonRow cols={5} />
+      </tbody>
+    </table>
+  );
+}
 
 export default function Courses() {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -24,7 +47,7 @@ export default function Courses() {
             <tr key={c.id}>
               <td><b>{c.title}</b><div className="muted small">{c.description}</div></td>
               <td className="muted">{c.objectives?.length || 0} objectives</td>
-              <td>v{c.version}</td>
+              <td className="mono">v{c.version}</td>
               <td><StatusBadge status={c.status} /></td>
               <td style={{ textAlign: "right" }}>
                 <Link to={`/admin/courses/${c.id}`} className="btn btn-primary btn-sm">{cta} →</Link>
@@ -36,7 +59,20 @@ export default function Courses() {
     );
   }
 
-  if (loading) return <Layout title="Courses & Review"><Spinner label="Loading…" /></Layout>;
+  if (loading) {
+    return (
+      <Layout title="Courses & Review">
+        <div className="card mb">
+          <div className="card-head"><h3 style={{ margin: 0 }}>Draft courses awaiting review</h3></div>
+          <SkeletonTable />
+        </div>
+        <div className="card">
+          <div className="card-head"><h3 style={{ margin: 0 }}>Published & live courses</h3></div>
+          <SkeletonTable />
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout title="Courses & Review">

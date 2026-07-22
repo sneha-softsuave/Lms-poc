@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { ReactNode } from "react";
+import { motion } from "framer-motion";
 import { useAuth } from "../auth/AuthContext";
 
 const ADMIN_NAV = [
@@ -58,9 +59,19 @@ export function Layout({ title, children }: { title: string; children: ReactNode
       <div className="main">
         <div className="topbar">
           <div className="topbar-title">{title}</div>
-          <span className="badge badge-gray">POC demo</span>
+          <div className="row" style={{ gap: 10 }}>
+            <span className={`badge ${isAdmin ? "badge-blue" : "badge-green"}`}>{isAdmin ? "Admin mode" : "Learner mode"}</span>
+            <span className="badge badge-gray">POC demo</span>
+          </div>
         </div>
-        <div className="content">{children}</div>
+        <motion.div
+          className="content"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] as const }}
+        >
+          {children}
+        </motion.div>
       </div>
     </div>
   );

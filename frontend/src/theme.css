@@ -1,0 +1,124 @@
+/* ── Defense AI LMS — command-center design tokens ─────────────────────────── */
+
+:root {
+  color-scheme: dark;
+
+  /* ── Base palette (deep navy / charcoal) ── */
+  --base-1000: #0A0E14;
+  --base-950:  #0C1118;
+  --base-900:  #0E141D;
+  --base-850:  #101721;
+  --base-800:  #111722;
+  --base-700:  #16202C;
+  --base-600:  #1C2A3A;
+  --base-500:  #25384D;
+  --base-400:  #33506D;
+  --base-300:  #4A6787;
+  --base-200:  #6C8BA3;
+  --base-100:  #9DB2C4;
+
+  /* ── Single accent: steel blue ── */
+  --accent:        #4A8BDF;
+  --accent-bright: #6BA3F0;
+  --accent-dim:    #2E5A8C;
+  --accent-dark:   #1E3A5F;
+  --accent-glow:   rgba(74, 139, 223, 0.35);
+  --accent-rgb:    74, 139, 223;
+
+  /* ── Functional status ── */
+  --ok:       #2BB673;
+  --ok-soft:  rgba(43, 182, 115, 0.14);
+  --warn:     #D4A017;
+  --warn-soft: rgba(212, 160, 23, 0.14);
+  --error:    #D64535;
+  --error-soft: rgba(214, 69, 53, 0.14);
+  --info:     var(--accent);
+  --info-soft: rgba(74, 139, 223, 0.14);
+
+  /* ── Surfaces & text ── */
+  --bg-root:      var(--base-1000);
+  --bg-root-gradient: radial-gradient(1200px 600px at 15% 0%, rgba(74, 139, 223, 0.06), transparent 60%);
+  --bg-panel:     var(--base-900);
+  --bg-elevated:  var(--base-800);
+  --bg-input:     var(--base-700);
+  --bg-hover:     rgba(100, 130, 160, 0.08);
+  --border:       rgba(100, 130, 160, 0.16);
+  --border-strong:rgba(100, 130, 160, 0.32);
+  --text-main:    #E8EDF2;
+  --text-muted:   #8A9CB0;
+  --text-dim:     #5E758C;
+
+  /* ── Typography ── */
+  --font-sans: "IBM Plex Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", "Cascadia Mono", monospace;
+
+  --text-2xs: 10px;
+  --text-xs:  11px;
+  --text-sm:  13px;
+  --text-base:14px;
+  --text-md:  16px;
+  --text-lg:  20px;
+  --text-xl:  26px;
+  --text-2xl: 32px;
+
+  /* ── Spacing ── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10:40px;
+
+  /* ── Radii ── */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  /* ── Shadows ── */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.28);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.38);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.48);
+  --shadow-glow: 0 0 0 1px var(--accent-glow), 0 0 28px rgba(74, 139, 223, 0.12);
+
+  /* ── Motion ── */
+  --dur-fast:   150ms;
+  --dur-normal: 200ms;
+  --dur-slow:   300ms;
+  --ease-out:   cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out:cubic-bezier(0.45, 0, 0.55, 1);
+
+  /* ── Layout ── */
+  --sidebar-width: 244px;
+  --topbar-height: 56px;
+  --content-max:   1320px;
+
+  /* ── Legacy alias tokens (keep existing inline styles working) ── */
+  --navy-900: var(--base-1000);
+  --navy-800: var(--base-900);
+  --navy-700: var(--base-800);
+  --navy-600: var(--base-700);
+  --slate-50:  var(--base-900);
+  --slate-100: var(--base-800);
+  --slate-200: var(--base-700);
+  --slate-300: var(--base-600);
+  --slate-500: var(--text-muted);
+  --slate-600: var(--text-dim);
+  --slate-800: var(--text-main);
+  --gold:       var(--accent);
+  --gold-soft:  var(--info-soft);
+  --green:      var(--ok);
+  --green-soft: var(--ok-soft);
+  --red:        var(--error);
+  --red-soft:   var(--error-soft);
+  --amber:      var(--warn);
+  --amber-soft: var(--warn-soft);
+  --blue:       var(--accent);
+  --blue-soft:  var(--info-soft);
+  --shadow:     var(--shadow-md);
+  --radius:     var(--radius-lg);
+  --radius-sm:  var(--radius-sm);
+}

@@ -1,17 +1,33 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import { Layout } from "../../components/Layout";
 import { api } from "../../api/client";
-import { Spinner } from "../../components/ui";
+import { Spinner, SkeletonCard, SkeletonText } from "../../components/ui";
 
 function Stat({ ico, val, label, tone }: { ico: string; val: any; label: string; tone: string }) {
   return (
-    <div className="card stat">
+    <motion.div
+      className="card stat"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+    >
       <div className="row" style={{ justifyContent: "space-between" }}>
         <div className="stat-ico" style={{ background: `var(--${tone}-soft)`, color: `var(--${tone})` }}>{ico}</div>
       </div>
       <div className="stat-val mt">{val}</div>
       <div className="stat-label">{label}</div>
+    </motion.div>
+  );
+}
+
+function SkeletonStat() {
+  return (
+    <div className="card stat">
+      <div className="skeleton stat-ico" style={{ width: 40, height: 40, borderRadius: 10 }} />
+      <div className="skeleton mt" style={{ width: 60, height: 28, borderRadius: 4 }} />
+      <div className="skeleton mt" style={{ width: 100, height: 12, borderRadius: 4 }} />
     </div>
   );
 }
@@ -32,7 +48,17 @@ export default function AdminHome() {
   const enrolled = cohort.reduce((s, c) => s + (c.enrolled || 0), 0);
   const completed = cohort.reduce((s, c) => s + (c.completed || 0), 0);
 
-  if (loading) return <Layout title="Overview"><Spinner label="Loading dashboard…" /></Layout>;
+  if (loading) {
+    return (
+      <Layout title="Administration overview">
+        <div className="grid grid-4 mb"><SkeletonStat /><SkeletonStat /><SkeletonStat /><SkeletonStat /></div>
+        <div className="grid grid-2" style={{ alignItems: "start" }}>
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout title="Administration overview">
@@ -55,9 +81,9 @@ export default function AdminHome() {
                 {cohort.map((c) => (
                   <tr key={c.course_id}>
                     <td><b>{c.course_title}</b><div className="muted small">{c.subject_title}</div></td>
-                    <td>{c.enrolled}</td>
-                    <td>{c.avg_progress_pct}%</td>
-                    <td>{c.completed}</td>
+                    <td className="mono">{c.enrolled}</td>
+                    <td className="mono">{c.avg_progress_pct}%</td>
+                    <td className="mono">{c.completed}</td>
                   </tr>
                 ))}
               </tbody>

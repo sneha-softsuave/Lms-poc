@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { Layout } from "../../components/Layout";
 import { api } from "../../api/client";
 import { useToast } from "../../components/Toast";
-import { Empty, Spinner } from "../../components/ui";
+import { Empty, Spinner, SkeletonCard, Progress } from "../../components/ui";
 
 export default function Catalog() {
   const nav = useNavigate();
@@ -28,7 +29,18 @@ export default function Catalog() {
     } catch (e: any) { toast.push(e.message, "err"); }
   }
 
-  if (loading) return <Layout title="Course catalog"><Spinner label="Loading catalog…" /></Layout>;
+  if (loading) {
+    return (
+      <Layout title="Course catalog">
+        <div className="mb-lg">
+          <div className="skeleton mb" style={{ width: 220, height: 24 }} />
+          <div className="grid grid-3">
+            <SkeletonCard /><SkeletonCard /><SkeletonCard />
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   const total = groups.reduce((s, g) => s + g.courses.length, 0);
 
@@ -37,19 +49,37 @@ export default function Catalog() {
       {total === 0 ? (
         <div className="card"><Empty icon="🗂" title="No published courses yet"
           hint="An administrator needs to upload material, generate a course, and publish it." /></div>
-      ) : groups.map((g) => (
-        <div key={g.subject_id} className="mb-lg" style={{ marginBottom: 28 }}>
+      ) : groups.map((g, gi) => (
+        <motion.div
+          key={g.subject_id}
+          className="mb-lg"
+          style={{ marginBottom: 28 }}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: gi * 0.08 }}
+        >
           <div className="spread mb">
-            <h3 style={{ margin: 0 }}>{g.subject_title}</h3>
-            <span className="muted small">{g.courses.length} course(s)</span>
+            <div className="row">
+              <h3 style={{ margin: 0 }}>{g.subject_title}</h3>
+              <span className="badge badge-gray mono">{g.courses.length} course(s)</span>
+            </div>
           </div>
           <div className="grid grid-3">
-            {g.courses.map((c: any) => (
-              <div key={c.id} className="card">
+            {g.courses.map((c: any, ci: number) => (
+              <motion.div
+                key={c.id}
+                className="card card-hoverable"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25, delay: ci * 0.05 }}
+              >
                 <div className="card-pad">
-                  <span className="badge badge-blue mb">{g.subject_title}</span>
+                  <div className="spread mb">
+                    <span className="badge badge-blue">{g.subject_title}</span>
+                    {enrolled.has(c.id) && <span className="badge badge-green">Enrolled</span>}
+                  </div>
                   <h4 style={{ margin: "6px 0" }}>{c.title}</h4>
-                  <p className="small muted" style={{ minHeight: 40 }}>{c.description}</p>
+                  <p className="small muted" style={{ minHeight: 40, margin: 0 }}>{c.description}</p>
                   <div className="row mt">
                     {enrolled.has(c.id) ? (
                       <button className="btn btn-success btn-sm btn-block" onClick={() => nav(`/courses/${c.id}`)}>Continue →</button>
@@ -61,10 +91,10 @@ export default function Catalog() {
                     )}
                   </div>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
-        </div>
+        </motion.div>
       ))}
     </Layout>
   );
