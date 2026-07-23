@@ -9,6 +9,28 @@ const ACTION_TONE: Record<string, string> = {
   "quiz.submit": "badge-amber", "chat.answer": "badge-gray",
 };
 
+// Renders an audit detail payload as `key:value, key:value` — same content as
+// JSON.stringify but without the braces and quoting noise.
+function formatDetail(detail: any): string {
+  if (detail === null || detail === undefined) return "—";
+
+  let value = detail;
+  if (typeof value === "string") {
+    try { value = JSON.parse(value); } catch { return value; }
+  }
+  if (typeof value !== "object") return String(value);
+
+  const render = (v: any): string => {
+    if (v === null) return "null";
+    if (Array.isArray(v)) return `[${v.map(render).join(", ")}]`;
+    if (typeof v === "object") return Object.entries(v).map(([k, x]) => `${k}:${render(x)}`).join(", ");
+    return String(v);
+  };
+
+  const out = render(value);
+  return out === "" ? "—" : out;
+}
+
 function SkeletonAudit() {
   return (
     <table>
@@ -45,20 +67,22 @@ export default function Audit() {
         {loading ? <SkeletonAudit /> : events.length === 0 ? (
           <Empty icon={<IconTile name="audit" size="lg" tone="slate" />} title="No events yet" hint="Activity will appear here as the platform is used." />
         ) : (
-          <table>
-            <thead><tr><th>#</th><th>Action</th><th>Entity</th><th>Actor</th><th>Detail</th></tr></thead>
-            <tbody>
-              {events.map((e) => (
-                <tr key={e.id}>
-                  <td className="muted mono">{e.id}</td>
-                  <td><span className={`badge ${ACTION_TONE[e.action] || "badge-gray"}`}>{e.action}</span></td>
-                  <td className="muted">{e.entity}</td>
-                  <td className="muted">{e.actor_id ?? "system"}</td>
-                  <td className="small muted">{e.detail ? JSON.stringify(e.detail) : "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="table-scroll">
+            <table>
+              <thead><tr><th>#</th><th>Action</th><th>Entity</th><th>Actor</th><th>Detail</th></tr></thead>
+              <tbody>
+                {events.map((e) => (
+                  <tr key={e.id}>
+                    <td className="muted mono">{e.id}</td>
+                    <td><span className={`badge ${ACTION_TONE[e.action] || "badge-gray"}`}>{e.action}</span></td>
+                    <td className="muted">{e.entity}</td>
+                    <td className="muted">{e.actor_id ?? "system"}</td>
+                    <td className="small muted mono">{formatDetail(e.detail)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </Layout>

@@ -90,8 +90,11 @@ async def publish_and_sync(c, H) -> dict:
     for q in qs:
         await c.post(f"/api/v1/review/questions/{q['id']}/approve", headers=H)
     await c.post(f"/api/v1/review/courses/{course['id']}/publish", headers=H)
+    # Publishing now indexes the course itself, so this explicit sync is a re-check
+    # and correctly reports everything as skipped (hashes already match). Assert on
+    # the total accounted-for content, which still fails if nothing was indexed.
     stats = (await c.post(f"/api/v1/admin/chatbot/courses/{course['id']}/sync", headers=H)).json()
-    assert stats["synced"] >= 2, stats
+    assert stats["synced"] + stats["skipped"] >= 2, stats
     return course
 
 

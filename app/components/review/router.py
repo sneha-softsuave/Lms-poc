@@ -14,11 +14,14 @@ from app.components.review.models import LessonEdit, QuestionEdit
 from app.components.review.service import ReviewService
 from app.core.auth import require_admin
 from app.database import get_db
+from app.gateway import get_gateway
+from app.gateway.base import ModelGateway
 
 router = APIRouter(prefix="/api/v1/review", tags=["Review"])
 
 Db = Annotated[AsyncSession, Depends(get_db)]
 AdminUser = Annotated[User, Depends(require_admin())]
+Gateway = Annotated[ModelGateway, Depends(get_gateway)]
 
 
 @router.get("/drafts", response_model=list[CourseOut])
@@ -81,8 +84,10 @@ async def edit_lesson(lesson_id: int, edit: LessonEdit, db: Db, admin: AdminUser
 
 
 @router.post("/courses/{course_id}/publish", response_model=CourseOut)
-async def publish_course(course_id: int, db: Db, admin: AdminUser):
-    return await ReviewService.publish_course(course_id, db)
+async def publish_course(course_id: int, db: Db, admin: AdminUser, gateway: Gateway):
+    # Gateway is injected (not fetched inside the service) so publish-triggered
+    # indexing honours dependency overrides in tests and smokes.
+    return await ReviewService.publish_course(course_id, db, gateway)
 
 
 @router.post("/courses/{course_id}/unpublish", response_model=CourseOut)

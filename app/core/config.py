@@ -61,6 +61,22 @@ class Settings(BaseSettings):
     CHUNK_OVERLAP: int = 64
     RETRIEVAL_TOP_K: int = 4
     ABSTAIN_THRESHOLD: float = 0.25  # top cosine below this -> chatbot abstains
+    # Generated lessons are a lossy summary of the uploaded document, so the raw
+    # source segments are indexed too and retrieved as a supplement. Reviewed course
+    # material still leads the context; these are the extra source blocks appended.
+    INDEX_SOURCE_DOCUMENT: bool = True
+    SOURCE_RETRIEVAL_TOP_K: int = 4
+    COMPONENT_SOURCE_TOP_K: int = 6  # 3D component explainer wants more source detail
+    # Lesson awareness: chunks from the lesson the learner is currently on are
+    # preferred, but only as a re-rank nudge — a hard filter would break the many
+    # legitimate questions whose answer lives in a different lesson.
+    LESSON_BOOST: float = 0.05
+    LESSON_CANDIDATE_MULTIPLIER: int = 3  # over-fetch so the boost has room to promote
+    # Multi-turn: prior exchanges included in the prompt so follow-ups ("and its
+    # range?") resolve. Retrieval still embeds the raw question - see the note in
+    # ChatbotService._history.
+    CHAT_HISTORY_TURNS: int = 3
+    CHAT_HISTORY_CHAR_CAP: int = 400  # per message, keeps long threads bounded
 
     # Object storage (MinIO / S3-compatible)
     STORAGE_PROVIDER: str = "minio"  # 'minio' | 'local'

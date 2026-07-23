@@ -32,9 +32,17 @@ class SearchHit:
 
 class VectorStore(Protocol):
     def ensure(self, dim: int) -> None: ...
-    def delete_by_content(self, content_type: str, content_id: int) -> None: ...
+    def delete_by_content(self, content_type: str, content_id: int, course_id: int) -> None: ...
+    def delete_by_course(self, course_id: int) -> None: ...
     def upsert(self, vectors: list[list[float]], texts: list[str], metadatas: list[dict]) -> list[str]: ...
-    def search(self, vector: list[float], *, course_id: int, top_k: int) -> list[SearchHit]: ...
+    def search(
+        self,
+        vector: list[float],
+        *,
+        course_id: int,
+        top_k: int,
+        content_types: list[str] | None = None,
+    ) -> list[SearchHit]: ...
 
 
 def _cosine(a: list[float], b: list[float]) -> float:
@@ -53,12 +61,22 @@ class InMemoryVectorStore:
     def ensure(self, dim: int) -> None:  # no-op
         pass
 
-    def delete_by_content(self, content_type: str, content_id: int) -> None:
+    def delete_by_content(self, content_type: str, content_id: int, course_id: int) -> None:
+        # course_id is part of the key: the same source-document segment can be
+        # indexed under several courses, and dropping one must not strip the others.
         drop = [
             pid
             for pid, p in self._points.items()
             if p["metadata"].get("content_type") == content_type
             and p["metadata"].get("content_id") == content_id
+            and p["metadata"].get("course_id") == course_id
+        ]
+        for pid in drop:
+            del self._points[pid]
+
+    def delete_by_course(self, course_id: int) -> None:
+        drop = [
+            pid for pid, p in self._points.items() if p["metadata"].get("course_id") == course_id
         ]
         for pid in drop:
             del self._points[pid]
@@ -71,11 +89,12 @@ class InMemoryVectorStore:
             ids.append(pid)
         return ids
 
-    def search(self, vector, *, course_id, top_k) -> list[SearchHit]:
+    def search(self, vector, *, course_id, top_k, content_types=None) -> list[SearchHit]:
         scored = [
             SearchHit(_cosine(vector, p["vector"]), p["text"], p["metadata"])
             for p in self._points.values()
             if p["metadata"].get("course_id") == course_id  # access control BEFORE ranking
+            and (content_types is None or p["metadata"].get("content_type") in content_types)
         ]
         scored.sort(key=lambda h: h.score, reverse=True)
         return scored[:top_k]
@@ -101,7 +120,7 @@ class QdrantVectorStore:
                 vectors_config=VectorParams(size=dim, distance=Distance.COSINE),
             )
 
-    def delete_by_content(self, content_type: str, content_id: int) -> None:
+    def delete_by_content(self, content_type: str, content_id: int, course_id: int) -> None:
         from qdrant_client.models import FieldCondition, Filter, MatchValue
 
         self.client.delete(
@@ -110,7 +129,18 @@ class QdrantVectorStore:
                 must=[
                     FieldCondition(key="content_type", match=MatchValue(value=content_type)),
                     FieldCondition(key="content_id", match=MatchValue(value=content_id)),
+                    FieldCondition(key="course_id", match=MatchValue(value=course_id)),
                 ]
+            ),
+        )
+
+    def delete_by_course(self, course_id: int) -> None:
+        from qdrant_client.models import FieldCondition, Filter, MatchValue
+
+        self.client.delete(
+            collection_name=self.collection,
+            points_selector=Filter(
+                must=[FieldCondition(key="course_id", match=MatchValue(value=course_id))]
             ),
         )
 
@@ -126,17 +156,21 @@ class QdrantVectorStore:
         self.client.upsert(collection_name=self.collection, points=points)
         return ids
 
-    def search(self, vector, *, course_id, top_k) -> list[SearchHit]:
-        from qdrant_client.models import FieldCondition, Filter, MatchValue
+    def search(self, vector, *, course_id, top_k, content_types=None) -> list[SearchHit]:
+        from qdrant_client.models import FieldCondition, Filter, MatchAny, MatchValue
 
-        results = self.client.search(
+        must = [FieldCondition(key="course_id", match=MatchValue(value=course_id))]
+        if content_types:
+            must.append(
+                FieldCondition(key="content_type", match=MatchAny(any=list(content_types)))
+            )
+        # query_points replaces the deprecated .search(), removed in qdrant-client 1.16+.
+        results = self.client.query_points(
             collection_name=self.collection,
-            query_vector=vector,
-            query_filter=Filter(
-                must=[FieldCondition(key="course_id", match=MatchValue(value=course_id))]
-            ),
+            query=vector,
+            query_filter=Filter(must=must),
             limit=top_k,
-        )
+        ).points
         return [
             SearchHit(r.score, r.payload.get("text", ""), {k: v for k, v in r.payload.items() if k != "text"})
             for r in results

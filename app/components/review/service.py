@@ -66,7 +66,7 @@ class ReviewService:
         return lesson
 
     @staticmethod
-    async def publish_course(course_id: int, db: AsyncSession) -> Course:
+    async def publish_course(course_id: int, db: AsyncSession, gateway=None) -> Course:
         course = await db.get(Course, course_id)
         if not course:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Course not found")
@@ -97,7 +97,33 @@ class ReviewService:
         await db.commit()
         await db.refresh(course)
         logger.info("Published course %s (v%d)", course.title, course.version)
+        await ReviewService._index_for_chatbot(course_id, db, gateway)
         return course
+
+    @staticmethod
+    async def _index_for_chatbot(course_id: int, db: AsyncSession, gateway=None) -> None:
+        """Index the freshly published course so the chatbot can answer on it.
+
+        Deliberately non-fatal: publishing is the compliance-gated action and must
+        not be undone by an embedding provider being unreachable. A failure here
+        leaves the course published but unsearchable until an admin re-runs
+        POST /api/v1/admin/chatbot/courses/{id}/sync.
+        """
+        try:
+            from app.components.chatbot.sync_service import SyncService
+
+            if gateway is None:  # non-request callers (scripts, startup)
+                from app.gateway import get_gateway
+
+                gateway = get_gateway()
+            stats = await SyncService.sync_course(course_id, gateway, db)
+            logger.info("Chatbot index updated for course %d: %s", course_id, stats)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning(
+                "Chatbot indexing failed for course %d (%s): %s — course is published "
+                "but not yet searchable; re-run the admin sync endpoint.",
+                course_id, type(exc).__name__, exc,
+            )
 
     @staticmethod
     async def unpublish_course(course_id: int, db: AsyncSession) -> Course:
@@ -107,7 +133,32 @@ class ReviewService:
         course.status = STATUS_UNPUBLISHED
         await db.commit()
         await db.refresh(course)
+        logger.info("Unpublished course %s", course.title)
+        await ReviewService._purge_from_chatbot(course_id, db)
         return course
+
+    @staticmethod
+    async def _purge_from_chatbot(course_id: int, db: AsyncSession) -> None:
+        """Drop the course's vectors so the chatbot stops answering from it.
+
+        Withdrawing a course from the catalog must never be blocked by the vector
+        store being down, so this is non-fatal like the publish-side sync — but it
+        logs at ERROR, not WARNING: a failure here leaves withdrawn content still
+        answerable over /api/v1/chat to enrolled learners, which is a compliance
+        exposure rather than a missing feature.
+        """
+        try:
+            from app.components.chatbot.sync_service import SyncService
+
+            stats = await SyncService.purge_course(course_id, db)
+            logger.info("Chatbot index purged for course %d: %s", course_id, stats)
+        except Exception as exc:  # noqa: BLE001
+            logger.error(
+                "Chatbot index purge FAILED for course %d (%s): %s - the course is "
+                "unpublished but its content may still be answerable in chat; "
+                "re-run unpublish once the vector store is reachable.",
+                course_id, type(exc).__name__, exc,
+            )
 
     @staticmethod
     async def list_draft_courses(db: AsyncSession) -> list[Course]:
