@@ -149,8 +149,12 @@ const ICONS: Record<IconName, ReactNode> = {
   ),
 };
 
+/**
+ * Bare icons size themselves to the surrounding font-size (`.icon svg { 1em }`),
+ * so they line up inside buttons, badges and list rows without per-use styling.
+ */
 export function Icon({ name, className = "" }: { name: IconName; className?: string }) {
-  return <span className={className}>{ICONS[name]}</span>;
+  return <span className={`icon ${className}`.trim()}>{ICONS[name]}</span>;
 }
 
 export function IconTile({

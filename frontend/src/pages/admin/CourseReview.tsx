@@ -5,6 +5,7 @@ import { Layout } from "../../components/Layout";
 import { api, CourseTree, Question, Model3D } from "../../api/client";
 import { useToast } from "../../components/Toast";
 import { StatusBadge, DifficultyBadge, Citations, Spinner, Section } from "../../components/ui";
+import { Button } from "../../components/Button";
 import { Icon, IconTile } from "../../components/icons";
 
 export default function CourseReview() {
@@ -17,6 +18,8 @@ export default function CourseReview() {
   const [models, setModels] = useState<Model3D[]>([]);
   const [loading, setLoading] = useState(true);
   const [publishing, setPublishing] = useState(false);
+  const [bulkApproving, setBulkApproving] = useState(false);
+  const [busyQuestion, setBusyQuestion] = useState<number | null>(null);
   const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
 
   async function load() {
@@ -30,17 +33,23 @@ export default function CourseReview() {
   const pending = questions.filter((q) => q.review_status === "pending").length;
 
   async function setStatus(qid: number, action: "approve" | "reject") {
+    setBusyQuestion(qid);
     try {
       await (action === "approve" ? api.approveQuestion(qid) : api.rejectQuestion(qid));
       setQuestions((qs) => qs.map((q) => q.id === qid ? { ...q, review_status: action === "approve" ? "approved" : "rejected" } : q));
     } catch (e: any) { toast.push(e.message, "err"); }
+    finally { setBusyQuestion(null); }
   }
 
   async function bulkApprove() {
+    setBulkApproving(true);
     const ids = questions.filter((q) => q.review_status === "pending").map((q) => q.id);
-    for (const qid of ids) await api.approveQuestion(qid);
-    toast.push(`Approved ${ids.length} questions`, "ok");
-    load();
+    try {
+      for (const qid of ids) await api.approveQuestion(qid);
+      toast.push(`Approved ${ids.length} questions`, "ok");
+      await load();
+    } catch (e: any) { toast.push(e.message, "err"); }
+    finally { setBulkApproving(false); }
   }
 
   async function attachModel(lessonId: number, key: string) {
@@ -98,16 +107,23 @@ export default function CourseReview() {
           <div style={{ textAlign: "right" }}>
             {isPublished ? (
               <>
-                <button className="btn btn-ghost" disabled={publishing} onClick={unpublish}>
-                  {publishing ? "…" : "Unpublish"}
-                </button>
+                <Button variant="ghost" loading={publishing} loadingText="Unpublishing…" onClick={unpublish}>
+                  Unpublish
+                </Button>
                 <div className="muted small mt">Live in the catalog</div>
               </>
             ) : (
               <>
-                <button className="btn btn-success" disabled={publishing || pending > 0} onClick={publish}>
-                  {publishing ? "Publishing…" : <span className="row"><Icon name="check" /> Publish course</span>}
-                </button>
+                <Button
+                  variant="success"
+                  loading={publishing}
+                  loadingText="Publishing & indexing…"
+                  disabled={pending > 0}
+                  icon={<Icon name="check" />}
+                  onClick={publish}
+                >
+                  Publish course
+                </Button>
                 <div className="muted small mt">
                   {pending > 0 ? `${pending} question(s) still pending` : "All questions reviewed"}
                 </div>
@@ -156,10 +172,14 @@ export default function CourseReview() {
                         {m.lessons.map((l) => (
                           <div key={l.id} className="mb tree-leaf" style={{ paddingBottom: 12, borderBottom: "1px solid var(--border)" }}>
                             <div className="spread">
-                              <b>{l.title}</b>
+                              <b style={{ fontSize: "var(--text-md)", letterSpacing: "-0.01em" }}>{l.title}</b>
                               {l.source_ref?.page && <span className="badge badge-gray mono">p{l.source_ref.page}</span>}
                             </div>
-                            <p className="small muted" style={{ margin: "4px 0 8px" }}>{l.body}</p>
+                            {/* body sits visually beneath the title, never level with it */}
+                            <p className="small muted" style={{
+                              margin: "6px 0 10px", lineHeight: 1.7,
+                              paddingLeft: 10, borderLeft: "2px solid var(--border)",
+                            }}>{l.body}</p>
                             <div className="row small">
                               <span className="label" style={{ margin: 0 }}>3D model</span>
                               <select className="select" style={{ width: "auto", padding: "5px 8px" }}
@@ -191,7 +211,11 @@ export default function CourseReview() {
         <div>
           <div className="spread mb">
             <h3 style={{ margin: 0 }}>Quiz bank ({questions.length})</h3>
-            {pending > 0 && <button className="btn btn-gold btn-sm" onClick={bulkApprove}>Approve all pending</button>}
+            {pending > 0 && (
+              <Button variant="gold" size="sm" loading={bulkApproving} loadingText={`Approving ${pending}…`} onClick={bulkApprove}>
+                Approve all pending ({pending})
+              </Button>
+            )}
           </div>
           {questions.map((q, i) => (
             <motion.div
@@ -225,8 +249,10 @@ export default function CourseReview() {
                 <Citations items={q.source_ref ? [q.source_ref] : []} />
                 {q.review_status === "pending" && (
                   <div className="row mt">
-                    <button className="btn btn-success btn-sm" onClick={() => setStatus(q.id, "approve")}>Approve</button>
-                    <button className="btn btn-danger btn-sm" onClick={() => setStatus(q.id, "reject")}>Reject</button>
+                    <Button variant="success" size="sm" loading={busyQuestion === q.id} loadingText="Saving…"
+                      onClick={() => setStatus(q.id, "approve")}>Approve</Button>
+                    <Button variant="danger" size="sm" disabled={busyQuestion === q.id}
+                      onClick={() => setStatus(q.id, "reject")}>Reject</Button>
                   </div>
                 )}
               </div>

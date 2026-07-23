@@ -81,8 +81,11 @@ class CourseGenerationService:
         prompt = COURSE_USER_TEMPLATE.format(
             doc_code=doc.doc_code, segments=_segments_block(segments)
         )
+        # Headroom matters: lesson bodies are the retrieval corpus (see the lesson
+        # body rules in COURSE_USER_TEMPLATE), so the JSON is long by design and a
+        # tight budget truncates it into unparseable output.
         completion = await gateway.generate(
-            prompt, system=COURSE_SYSTEM_PROMPT, max_tokens=3000, temperature=0.0
+            prompt, system=COURSE_SYSTEM_PROMPT, max_tokens=8000, temperature=0.0
         )
         data = _parse_json(completion.text)
 

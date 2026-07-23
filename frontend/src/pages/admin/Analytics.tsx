@@ -4,6 +4,7 @@ import { Layout } from "../../components/Layout";
 import { api } from "../../api/client";
 import { useToast } from "../../components/Toast";
 import { Progress, Empty, Spinner } from "../../components/ui";
+import { Button } from "../../components/Button";
 import { Icon } from "../../components/icons";
 import { IconTile } from "../../components/icons";
 
@@ -34,6 +35,7 @@ export default function Analytics() {
   const [weakest, setWeakest] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [exported, setExported] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     Promise.all([api.cohortProgress(), api.subjectMastery(), api.weakestTopics()])
@@ -42,6 +44,7 @@ export default function Analytics() {
   }, []);
 
   async function exportCsv() {
+    setExporting(true);
     try {
       await api.downloadResultsCsv();
       setExported(true);
@@ -49,6 +52,7 @@ export default function Analytics() {
       setTimeout(() => setExported(false), 2200);
     }
     catch (e: any) { toast.push(e.message, "err"); }
+    finally { setExporting(false); }
   }
 
   const stats = useMemo(() => {
@@ -87,15 +91,20 @@ export default function Analytics() {
             <IconTile name="analytics" size="sm" tone="blue" />
             <h3 style={{ margin: 0 }}>Cohort progress by course</h3>
           </div>
-          <button className={`btn btn-sm ${exported ? "btn-success" : "btn-ghost"}`} onClick={exportCsv}>
-            <AnimatePresence mode="wait">
-              {exported ? (
-                <motion.span key="ok" className="row" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}><Icon name="check" /> Exported</motion.span>
-              ) : (
-                <motion.span key="export" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}>⭳ Export results (CSV)</motion.span>
-              )}
+          <Button
+            size="sm"
+            variant={exported ? "success" : "ghost"}
+            loading={exporting}
+            loadingText="Preparing CSV…"
+            icon={exported ? <Icon name="check" /> : undefined}
+            onClick={exportCsv}
+          >
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.span key={exported ? "ok" : "export"} initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}>
+                {exported ? "Exported" : "⭳ Export results (CSV)"}
+              </motion.span>
             </AnimatePresence>
-          </button>
+          </Button>
         </div>
         {cohort.length === 0 ? <Empty icon={<IconTile name="analytics" size="lg" tone="slate" />} title="No data yet" hint="Publish a course and have learners enrol." /> : (
           <table>

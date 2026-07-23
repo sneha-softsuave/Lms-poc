@@ -28,7 +28,7 @@ Return JSON with EXACTLY this shape:
       {{
         "title": "...",
         "lessons": [
-          {{"title": "...", "body": "2-4 sentence summary grounded in the material",
+          {{"title": "...", "body": "DETAILED teaching text — see the lesson body rules below",
             "source_ref": {{"doc": "{doc_code}", "section": "...", "page": 0}}}}
         ]
       }}
@@ -39,8 +39,27 @@ Return JSON with EXACTLY this shape:
     ]
   }}
 }}
-Rules: 1-3 modules; 1-4 lessons per module; 3-8 glossary terms. Use real page numbers
-from the segments. Keep lesson bodies faithful to the material."""
+Rules: 1-3 modules; 1-4 lessons per module; 6-12 glossary terms. Use real page numbers
+from the segments.
+
+LESSON BODY RULES — these matter more than anything else here:
+- The lesson body is the ONLY text later indexed for retrieval. Any part, component,
+  assembly or term that is NOT written out in a lesson body becomes unanswerable for
+  the learner. Do not summarise it away.
+- Write 150-300 words per lesson of substantive teaching text, not an abstract. Never
+  write a lesson body that merely announces what the lesson "covers" or what trainees
+  "will learn" — write the teaching content itself.
+- Name EVERY component, part, assembly or term the material teaches for that lesson,
+  and for each one state, in its own sentence, what it is and what it does. Use the
+  material's exact wording for a component's name (keep punctuation and brackets, e.g.
+  "Gas tube / handguard", "Main gun (forward)").
+- If a segment contains a passage explicitly presented as the lesson body, overview or
+  description for that topic, reproduce it substantially in full rather than condensing
+  it, then extend it with the supporting detail the material gives for each component.
+- Keep every sentence faithful to the material; add no facts the segments do not state.
+
+GLOSSARY RULES: prefer terms a learner would click on or ask about — component names
+and domain concepts drawn from across all modules, each defined in 1-3 full sentences."""
 
 QUIZ_SYSTEM_PROMPT = """You write assessment questions for a military training LMS.
 Each question must be answerable from the supplied module material, have exactly one

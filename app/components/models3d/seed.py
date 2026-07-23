@@ -128,6 +128,51 @@ PRELOADED = [
             _hs("hs-rbu", "RBU-12000 launcher", [0.149, -0.046, -0.913], "EQUIP-SHP", "ASW armament", 27),
         ],
     },
+    {
+        "model_key": "main-battle-tank",
+        "name": "Main battle tank (Ariete C1 pattern)",
+        "suitable_for": "Armoured corps — hull, turret, running gear",
+        # Gun barrel runs along +Z with the muzzle at Z 1.0; turret sits aft of
+        # centre; tracks are the symmetric pair at X ±0.28, Y -0.32.
+        "hotspots": [
+            _hs("hs-gun", "Main gun", [0.0, -0.05, 0.85], "EQUIP-ARM", "Main armament", 8),
+            _hs("hs-turret", "Turret", [0.0, 0.06, -0.35], "EQUIP-ARM", "Turret & traverse", 11),
+            _hs("hs-cupola", "Commander's cupola", [0.066, 0.159, -0.172], "EQUIP-ARM", "Crew stations", 14),
+            _hs("hs-track", "Track & running gear", [0.277, -0.319, -0.148], "EQUIP-ARM", "Running gear", 19),
+            _hs("hs-glacis", "Glacis / hull front", [0.0, -0.1, 0.4], "EQUIP-ARM", "Hull & armour", 5),
+            _hs("hs-deck", "Engine deck", [0.0, -0.05, -0.88], "EQUIP-ARM", "Powerpack", 22),
+        ],
+    },
+    {
+        "model_key": "uav-rustom",
+        "name": "Medium-altitude UAV (Rustom-2 pattern)",
+        "suitable_for": "Unmanned systems — airframe, payload, propulsion",
+        # Unusually, the fuselage runs along X (nose at +X, V-tail at -X) and the
+        # wing spans Z — the wingspan is the longest dimension on this airframe.
+        "hotspots": [
+            _hs("hs-nose", "Nose / sensor payload", [0.42, -0.06, 0.0], "EQUIP-UAV", "Payload & sensors", 12),
+            _hs("hs-fuselage", "Fuselage / avionics bay", [0.1, -0.02, 0.0], "EQUIP-UAV", "Airframe", 6),
+            _hs("hs-nacelle", "Engine nacelle", [0.069, -0.134, 0.224], "EQUIP-UAV", "Propulsion", 17),
+            _hs("hs-wing", "Wing", [0.0, 0.02, 0.78], "EQUIP-UAV", "Wing & control surfaces", 9),
+            _hs("hs-tail", "Tail / stabiliser", [-0.4, 0.08, 0.0], "EQUIP-UAV", "Empennage", 15),
+        ],
+    },
+    {
+        "model_key": "patrol-boat",
+        "name": "Fast attack craft",
+        "suitable_for": "Naval familiarisation — armament, bridge, torpedo tubes",
+        # Bow at +Z (the hull tapers to a point there; the model's own
+        # `superstructure_back` node sits at Z -0.479). Coordinates are the
+        # centroids of named mesh nodes, so every pin lands on real geometry.
+        "hotspots": [
+            _hs("hs-gun-fwd", "Main gun (forward)", [0.001, -0.003, 0.45], "EQUIP-FAC", "Main armament", 7),
+            _hs("hs-gun-aft", "Main gun (aft)", [0.001, -0.042, -0.45], "EQUIP-FAC", "Main armament", 7),
+            _hs("hs-aux", "Auxiliary gun", [0.062, -0.052, 0.593], "EQUIP-FAC", "Secondary armament", 10),
+            _hs("hs-torpedo", "Torpedo tubes", [0.081, -0.082, 0.098], "EQUIP-FAC", "Torpedo armament", 13),
+            _hs("hs-mast", "Mast / radar", [0.0, 0.1, 0.212], "EQUIP-FAC", "Sensors", 16),
+            _hs("hs-bridge", "Bridge / superstructure", [0.0, -0.081, -0.161], "EQUIP-FAC", "Bridge & control", 4),
+        ],
+    },
 ]
 
 

@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { api, ChatResponse } from "../api/client";
+import { Button } from "./Button";
 import { IconTile } from "./icons";
 
 interface Turn { q: string; res: ChatResponse; }
@@ -43,18 +44,27 @@ export function Chatbot({ courseId, lessonId }: { courseId: number; lessonId: nu
   const [turns, setTurns] = useState<Turn[]>([]);
   const [thread, setThread] = useState<number | undefined>();
   const [busy, setBusy] = useState(false);
+  // The question in flight, shown immediately so the feed never looks frozen
+  // while the model is thinking — including on the very first question.
+  const [pending, setPending] = useState<string | null>(null);
+  const feedRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = feedRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [turns, pending]);
 
   async function ask() {
-    if (!q.trim()) return;
+    if (!q.trim() || busy) return;
     const question = q;
-    setQ(""); setBusy(true);
+    setQ(""); setBusy(true); setPending(question);
     try {
       const res = await api.chat(courseId, lessonId, question, thread);
       setThread(res.thread_id);
       setTurns((t) => [...t, { q: question, res }]);
     } catch (e: any) {
       setTurns((t) => [...t, { q: question, res: { answer: `Error: ${e.message}`, grounded: true, citations: [], related_lessons: [], thread_id: thread || 0 } }]);
-    } finally { setBusy(false); }
+    } finally { setBusy(false); setPending(null); }
   }
 
   return (
@@ -66,8 +76,8 @@ export function Chatbot({ courseId, lessonId }: { courseId: number; lessonId: nu
         </div>
         <span className="badge badge-green">grounded</span>
       </div>
-      <div className="chatbot-feed">
-        {turns.length === 0 && (
+      <div className="chatbot-feed" ref={feedRef}>
+        {turns.length === 0 && !pending && (
           <div className="chatbot-empty">
             <div className="big"><IconTile name="chat" size="lg" tone="blue" /></div>
             <p className="muted small">Ask anything about this course. Answers are grounded in the source material and cited — the tutor says "not covered" rather than guessing.</p>
@@ -108,14 +118,23 @@ export function Chatbot({ courseId, lessonId }: { courseId: number; lessonId: nu
                 )}
               </motion.div>
             </div>
-            {busy && i === turns.length - 1 && (
-              <div className="chatbot-assistant">
-                <span className="chatbot-avatar assistant">AI</span>
-                <div className="chatbot-bubble assistant-bubble"><TypingDots /></div>
-              </div>
-            )}
           </div>
         ))}
+        {pending && (
+          <div className="chatbot-turn">
+            <div className="chatbot-user">
+              <span className="chatbot-avatar user">YOU</span>
+              <div className="chatbot-bubble user-bubble">{pending}</div>
+            </div>
+            <div className="chatbot-assistant">
+              <span className="chatbot-avatar assistant">AI</span>
+              <div className="chatbot-bubble assistant-bubble">
+                <TypingDots />
+                <div className="small dim" style={{ marginTop: 6 }}>Searching the course material…</div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       <div className="chatbot-input">
         <input
@@ -124,8 +143,11 @@ export function Chatbot({ courseId, lessonId }: { courseId: number; lessonId: nu
           placeholder="e.g. what is the range of the LMG?"
           onChange={(e) => setQ(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && ask()}
+          disabled={busy}
         />
-        <button className="btn btn-primary" disabled={busy} onClick={ask}>{busy ? "…" : "Ask"}</button>
+        <Button variant="primary" loading={busy} loadingText="Thinking" disabled={!q.trim()} onClick={ask}>
+          Ask
+        </Button>
       </div>
     </div>
   );

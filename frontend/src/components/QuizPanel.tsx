@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { api } from "../api/client";
 import { DifficultyBadge, Citations, Spinner, Empty, ScoreRing, Progress } from "./ui";
+import { Button } from "./Button";
 import { IconTile } from "./icons";
 import { useToast } from "./Toast";
 
@@ -165,11 +166,13 @@ export function QuizPanel({ moduleId }: { moduleId: number }) {
       </div>
 
       <div className="spread">
-        <button className="btn btn-ghost" disabled={idx === 0} onClick={() => setIdx((i) => i - 1)}>Previous</button>
+        <Button variant="ghost" disabled={idx === 0} onClick={() => setIdx((i) => i - 1)}>Previous</Button>
         {idx < quiz.questions.length - 1 ? (
-          <button className="btn btn-primary" disabled={!answers[qq.id]} onClick={() => setIdx((i) => i + 1)}>Next question</button>
+          <Button variant="primary" disabled={!answers[qq.id]} onClick={() => setIdx((i) => i + 1)}>Next question</Button>
         ) : (
-          <button className="btn btn-primary" disabled={busy || !answers[qq.id]} onClick={submit}>{busy ? "Grading…" : "Submit quiz"}</button>
+          <Button variant="primary" loading={busy} loadingText="Grading…" disabled={!answers[qq.id]} onClick={submit}>
+            Submit quiz
+          </Button>
         )}
       </div>
     </div>

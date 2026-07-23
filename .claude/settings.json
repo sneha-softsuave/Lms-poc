@@ -1,0 +1,73 @@
+{
+  "_comment": "Team-shared Claude Code settings. Personal overrides go in .claude/settings.local.json (gitignored). The 'deny' list makes git and remote mutations impossible for the agent, not merely prompted: the squad works in the working tree and hands you a ready-to-run commit/PR block instead. The 'allow' list keeps read-only git free of prompts, which the verifier and code-reviewer need in order to diff against a base commit. The PostToolUse hook runs the project's own lint/format command (resolved into .claude/stack-profile.md at setup) on changed files after every edit; it is non-blocking and never fails a session.",
+  "permissions": {
+    "deny": [
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git checkout:*)",
+      "Bash(git switch:*)",
+      "Bash(git reset:*)",
+      "Bash(git revert:*)",
+      "Bash(git merge:*)",
+      "Bash(git rebase:*)",
+      "Bash(git pull:*)",
+      "Bash(git fetch:*)",
+      "Bash(git clone:*)",
+      "Bash(git add:*)",
+      "Bash(git rm:*)",
+      "Bash(git mv:*)",
+      "Bash(git branch:*)",
+      "Bash(git tag:*)",
+      "Bash(git stash:*)",
+      "Bash(git cherry-pick:*)",
+      "Bash(git apply:*)",
+      "Bash(git clean:*)",
+      "Bash(git remote:*)",
+      "Bash(git config:*)",
+      "Bash(git worktree:*)",
+      "Bash(gh pr create:*)",
+      "Bash(gh pr merge:*)",
+      "Bash(gh pr edit:*)",
+      "Bash(gh pr close:*)",
+      "Bash(gh pr reopen:*)",
+      "Bash(gh pr review:*)",
+      "Bash(gh pr comment:*)",
+      "Bash(gh pr ready:*)",
+      "Bash(gh issue create:*)",
+      "Bash(gh issue edit:*)",
+      "Bash(gh issue close:*)",
+      "Bash(gh issue comment:*)",
+      "Bash(gh release create:*)",
+      "Bash(gh release edit:*)",
+      "Bash(gh release delete:*)",
+      "Bash(gh repo create:*)",
+      "Bash(gh repo delete:*)",
+      "Bash(gh api:*)"
+    ],
+    "allow": [
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git blame:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(git ls-files:*)",
+      "Bash(git describe:*)",
+      "Bash(git shortlog:*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PROJECT_DIR}/.claude/hooks/lint-changed.sh\"",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  }
+}

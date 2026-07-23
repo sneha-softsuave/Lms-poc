@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { api } from "../api/client";
 import { useToast } from "../components/Toast";
+import { Button } from "../components/Button";
 import { IconTile } from "../components/icons";
 
 export default function Login() {
@@ -90,9 +91,15 @@ export default function Login() {
             <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && submit()} />
           </div>
-          <button className="btn btn-primary btn-block" disabled={busy} onClick={submit}>
-            {busy ? "Please wait…" : mode === "login" ? "Sign in" : "Create account & sign in"}
-          </button>
+          <Button
+            variant="primary"
+            block
+            loading={busy}
+            loadingText={mode === "login" ? "Signing in…" : "Creating account…"}
+            onClick={submit}
+          >
+            {mode === "login" ? "Sign in" : "Create account & sign in"}
+          </Button>
 
           <div className="small mt" style={{ textAlign: "center" }}>
             {mode === "login" ? (
